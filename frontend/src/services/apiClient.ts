@@ -1,4 +1,5 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, MutationCache } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export const API_BASE_URL =
   import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
@@ -11,6 +12,19 @@ export const queryClient = new QueryClient({
       retry: 1,
     },
   },
+  mutationCache: new MutationCache({
+    onSuccess: (_data, _variables, _context, mutation) => {
+      const message = (mutation.options.meta as any)?.successMessage as string | undefined;
+      if (message) {
+        toast.success(message);
+      }
+    },
+    onError: (error, _variables, _context, mutation) => {
+      const message =
+        (mutation.options.meta as any)?.errorMessage as string | undefined;
+      toast.error(message ?? error.message ?? "Došlo je do greške");
+    },
+  }),
 });
 
 function getAuthToken(): string {

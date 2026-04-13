@@ -3,17 +3,8 @@ import postgres from "postgres";
 import { env } from "../config/env.js";
 import * as schema from "./schema.js";
 
-// Supabase appends ?channel_binding=require which postgres.js does not support
-function sanitizeConnectionUrl(urlString: string): string {
-  const url = new URL(urlString);
-  url.searchParams.delete("channel_binding");
-  return url.toString();
-}
-
-const connectionUrl = sanitizeConnectionUrl(env.DATABASE_URL);
-
-const client = postgres(connectionUrl, {
-  ssl: env.NODE_ENV === "production" ? "require" : false,
+const client = postgres(env.DATABASE_URL, {
+  ssl: "require",
   max: 20,
   idle_timeout: 30,
   connect_timeout: 10,

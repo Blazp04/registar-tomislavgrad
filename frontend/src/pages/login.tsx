@@ -12,7 +12,7 @@ export default function LoginPage() {
       </div>
     )
   }
-  if (session) return <Navigate to="/" replace />
+  if (session) return <Navigate to="/admin" replace />
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
@@ -20,6 +20,9 @@ export default function LoginPage() {
         <a href="/" className="flex items-center gap-2 self-center font-medium">
           Registar Tomislavgrad
         </a>
+        <p className="text-center text-sm text-muted-foreground">
+          Administracijski panel
+        </p>
         <LoginForm />
       </div>
     </div>

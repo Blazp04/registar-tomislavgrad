@@ -12,32 +12,23 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, Settings2Icon, BookOpenIcon } from "lucide-react"
+import { LayoutDashboardIcon, Settings2Icon, UsersIcon } from "lucide-react"
 
 const navMain = [
   {
     title: "Dashboard",
-    url: "/",
+    url: "/admin",
     icon: <LayoutDashboardIcon />,
-    isActive: true,
   },
   {
-    title: "Registar",
-    url: "#",
-    icon: <BookOpenIcon />,
-    items: [
-      { title: "Pregled", url: "#" },
-      { title: "Unos", url: "#" },
-    ],
+    title: "Studenti",
+    url: "/admin/students",
+    icon: <UsersIcon />,
   },
   {
-    title: "Postavke",
-    url: "#",
+    title: "Šifarnici",
+    url: "/admin/codebooks",
     icon: <Settings2Icon />,
-    items: [
-      { title: "Općenito", url: "#" },
-      { title: "Korisnici", url: "#" },
-    ],
   },
 ]
 
@@ -48,9 +39,9 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <BookOpenIcon className="size-4" />
+              <a href="/admin">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
+                  <img src="/favicon.png" alt="Grb" className="size-8 object-contain" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">Registar</span>
