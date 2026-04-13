@@ -1,5 +1,6 @@
 import { studentRepository } from "../repositories/studentRepository.js";
 import { codebookService } from "./codebookService.js";
+import { notificationService } from "./notificationService.js";
 import { NotFoundError } from "../utils/errors.js";
 import type { CreateStudentDTO, UpdateStudentDTO, StudentQueryDTO, SendSmsDTO, SendEmailDTO } from "../../dto/student.js";
 import { sendEmail } from "../../lib/email.js";
@@ -119,7 +120,7 @@ export const studentService = {
     return studentRepository.getStats();
   },
 
-  async sendBulkSms(data: SendSmsDTO) {
+  async sendBulkSms(data: SendSmsDTO, userId?: string) {
     const students = await studentRepository.findByIds(data.studentIds);
 
     const messages = students.map((s) => {
@@ -129,6 +130,7 @@ export const studentService = {
 
       return {
         phone: s.phone,
+        studentId: s.id,
         studentName: `${s.firstName} ${s.lastName}`,
         message,
       };
@@ -144,16 +146,28 @@ export const studentService = {
     console.log(`\nUkupno poruka: ${messages.length}`);
     console.log("=== KRAJ ===\n");
 
+    // Log notifications to database
+    await notificationService.logNotifications(
+      messages.map((m) => ({
+        studentId: m.studentId,
+        type: "sms" as const,
+        content: m.message,
+        sentBy: userId ?? null,
+      }))
+    );
+
     return {
       sent: messages.length,
       messages,
     };
   },
 
-  async sendBulkEmail(data: SendEmailDTO) {
+  async sendBulkEmail(data: SendEmailDTO, userId?: string) {
     const students = await studentRepository.findByIds(data.studentIds);
 
     const results = [];
+    const notificationRecords: Array<{ studentId: string; type: "email"; subject: string; content: string; sentBy: string | null }> = [];
+
     for (const s of students) {
       const messageBody = data.messageTemplate
         .replace(/\{ime\}/gi, s.firstName)
@@ -172,7 +186,18 @@ export const studentService = {
         studentName: `${s.firstName} ${s.lastName}`,
         success,
       });
+
+      notificationRecords.push({
+        studentId: s.id,
+        type: "email" as const,
+        subject: data.subject,
+        content: messageBody,
+        sentBy: userId ?? null,
+      });
     }
+
+    // Log notifications to database
+    await notificationService.logNotifications(notificationRecords);
 
     return {
       sent: results.filter((r) => r.success).length,

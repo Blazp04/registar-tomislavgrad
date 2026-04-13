@@ -82,7 +82,8 @@ export async function sendBulkSmsHandler(
   if (!parsed.success) {
     throw new ValidationError("Validacija nije uspjela", formatZodErrors(parsed.error));
   }
-  const result = await studentService.sendBulkSms(parsed.data);
+  const userId = (request as any).user?.id;
+  const result = await studentService.sendBulkSms(parsed.data, userId);
   return reply.send(successResponse(result));
 }
 
@@ -94,6 +95,7 @@ export async function sendBulkEmailHandler(
   if (!parsed.success) {
     throw new ValidationError("Validacija nije uspjela", formatZodErrors(parsed.error));
   }
-  const result = await studentService.sendBulkEmail(parsed.data);
+  const userId = (request as any).user?.id;
+  const result = await studentService.sendBulkEmail(parsed.data, userId);
   return reply.send(successResponse(result));
 }

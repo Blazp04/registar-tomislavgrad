@@ -35,7 +35,8 @@ export default function AdminLayout() {
   }
   if (!session) return <Navigate to="/admin/login" replace />
 
-  const pageTitle = breadcrumbMap[location.pathname] ?? "Dashboard"
+  const pageTitle = breadcrumbMap[location.pathname]
+    ?? (location.pathname.startsWith("/admin/students/") ? "Detalji studenta" : "Dashboard")
 
   return (
     <SidebarProvider>

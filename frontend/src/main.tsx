@@ -13,6 +13,7 @@ const LoginPage = lazy(() => import('@/pages/login'))
 const AdminLayout = lazy(() => import('@/pages/admin-layout'))
 const DashboardPage = lazy(() => import('@/pages/dashboard-stats'))
 const StudentsPage = lazy(() => import('@/pages/students'))
+const StudentDetailPage = lazy(() => import('@/pages/student-detail'))
 const CodebooksPage = lazy(() => import('@/pages/codebooks'))
 
 function NotFound() {
@@ -49,6 +50,7 @@ createRoot(document.getElementById('root')!).render(
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<DashboardPage />} />
                   <Route path="students" element={<StudentsPage />} />
+                  <Route path="students/:id" element={<StudentDetailPage />} />
                   <Route path="codebooks" element={<CodebooksPage />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />

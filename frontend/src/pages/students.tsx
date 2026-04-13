@@ -29,7 +29,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { SearchIcon, MessageSquareIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon, FilterXIcon, MailIcon } from "lucide-react"
+import { SearchIcon, MessageSquareIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon, FilterXIcon, MailIcon, EyeIcon } from "lucide-react"
+import { Link } from "react-router"
 
 const highSchoolTypeLabels: Record<string, string> = {
   gimnazija: "Gimnazija",
@@ -251,7 +252,9 @@ export default function StudentsPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium">
-                    {s.firstName} {s.lastName}
+                    <Link to={`/admin/students/${s.id}`} className="text-primary hover:underline underline-offset-4">
+                      {s.firstName} {s.lastName}
+                    </Link>
                   </TableCell>
                   <TableCell>{s.fatherName}</TableCell>
                   <TableCell>{s.phone}</TableCell>
@@ -283,14 +286,21 @@ export default function StudentsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(s.id!)}
-                      className="text-destructive"
-                    >
-                      <TrashIcon className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Link to={`/admin/students/${s.id}`}>
+                        <Button variant="ghost" size="icon">
+                          <EyeIcon className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(s.id!)}
+                        className="text-destructive"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

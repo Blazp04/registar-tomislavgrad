@@ -10,6 +10,7 @@ import {
   sendBulkSmsHandler,
   sendBulkEmailHandler,
 } from "../handlers/studentHandler.js";
+import { getStudentNotificationsHandler } from "../handlers/notificationHandler.js";
 
 const studentItemSchema = {
   type: "object",
@@ -383,5 +384,53 @@ export function registerStudentRoutes(fastify: FastifyInstance) {
     },
     preHandler: [authPreHandler],
     handler: sendBulkEmailHandler,
+  });
+
+  // Admin — get student notification history
+  fastify.route({
+    method: "GET",
+    url: "/api/students/:id/notifications",
+    schema: {
+      description: "Get notification history for a student",
+      tags: ["Students"],
+      security: [{ bearerAuth: [] }],
+      params: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      querystring: {
+        type: "object",
+        properties: {
+          page: { type: "string", default: "1" },
+          limit: { type: "string", default: "20" },
+        },
+      },
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            success: { type: "boolean" },
+            data: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  type: { type: "string", enum: ["email", "sms"] },
+                  subject: { type: "string", nullable: true },
+                  content: { type: "string" },
+                  sentAt: { type: "string" },
+                  senderName: { type: "string", nullable: true },
+                },
+              },
+            },
+            meta: paginationMetaSchema,
+          },
+        },
+      },
+    },
+    preHandler: [authPreHandler],
+    handler: getStudentNotificationsHandler,
   });
 }
