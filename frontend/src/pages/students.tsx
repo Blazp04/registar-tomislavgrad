@@ -29,8 +29,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { SearchIcon, MessageSquareIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon, FilterXIcon, MailIcon, EyeIcon } from "lucide-react"
+import { SearchIcon, MessageSquareIcon, TrashIcon, ChevronLeftIcon, ChevronRightIcon, FilterXIcon, MailIcon, EyeIcon, DownloadIcon } from "lucide-react"
 import { Link } from "react-router"
+import * as XLSX from "xlsx"
 
 const highSchoolTypeLabels: Record<string, string> = {
   gimnazija: "Gimnazija",
@@ -106,6 +107,46 @@ export default function StudentsPage() {
     })
     setEmailOpen(false)
     setSelectedIds(new Set())
+  }
+
+  const handleExportExcel = () => {
+    const selected = students.filter((s) => selectedIds.has(s.id!))
+    if (selected.length === 0) return
+
+    const rows = selected.map((s) => ({
+      "Ime": s.firstName,
+      "Prezime": s.lastName,
+      "Ime oca": s.fatherName,
+      "Email": s.email,
+      "Telefon": s.phone,
+      "Adresa": s.address,
+      "Srednja škola — tip": highSchoolTypeLabels[s.highSchoolType ?? ""] ?? "",
+      "Srednja škola — trajanje": highSchoolDurationLabels[s.highSchoolDuration ?? ""] ?? "",
+      "Srednja škola — struka": s.highSchoolProfessionName ?? "",
+      "Grad srednje škole": s.highSchoolCityName ?? "",
+      "Fakultet": s.facultyName ?? "",
+      "Smjer": s.fieldOfStudyName ?? "",
+      "Grad fakulteta": s.facultyCityName ?? "",
+      "Status": s.isCurrentStudent ? "Trenutni student" : "Bivši student",
+      "Zaposlen": s.isEmployed ? "Da" : "Ne",
+      "Radi u struci": s.isWorkingInField ? "Da" : "Ne",
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(rows)
+
+    // Auto-size columns
+    const colWidths = Object.keys(rows[0]).map((key) => {
+      const maxLen = Math.max(
+        key.length,
+        ...rows.map((r) => String(r[key as keyof typeof r] ?? "").length)
+      )
+      return { wch: Math.min(maxLen + 2, 40) }
+    })
+    ws["!cols"] = colWidths
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Studenti")
+    XLSX.writeFile(wb, `studenti-export-${new Date().toISOString().slice(0, 10)}.xlsx`)
   }
 
   const updateFilter = (key: keyof StudentFilters, value: string) => {
@@ -203,6 +244,10 @@ export default function StudentsPage() {
           <Button size="sm" variant="outline" onClick={() => setEmailOpen(true)}>
             <MailIcon className="mr-1 h-4 w-4" />
             Pošalji Email
+          </Button>
+          <Button size="sm" variant="outline" onClick={handleExportExcel}>
+            <DownloadIcon className="mr-1 h-4 w-4" />
+            Izvezi u Excel
           </Button>
         </div>
       )}

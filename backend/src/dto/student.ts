@@ -66,19 +66,19 @@ export const studentQuerySchema = z.object({
   isCurrentStudent: z.enum(["true", "false"]).optional().transform(v => v === undefined ? undefined : v === "true"),
   isEmployed: z.enum(["true", "false"]).optional().transform(v => v === undefined ? undefined : v === "true"),
   isWorkingInField: z.enum(["true", "false"]).optional().transform(v => v === undefined ? undefined : v === "true"),
-  page: z.string().optional().default("1").transform(Number),
-  limit: z.string().optional().default("20").transform(Number),
+  page: z.string().optional().default("1").transform(Number).pipe(z.number().int().positive()),
+  limit: z.string().optional().default("20").transform(Number).pipe(z.number().int().positive().max(100)),
   sort: z.enum(["lastName", "firstName", "facultyName", "fieldOfStudyName", "createdAt"]).optional(),
   order: z.enum(["asc", "desc"]).optional().default("asc"),
 });
 
 export const sendSmsSchema = z.object({
-  studentIds: z.array(z.string().uuid()).min(1),
+  studentIds: z.array(z.string().uuid()).min(1).max(500),
   messageTemplate: z.string().min(1).max(1000),
 });
 
 export const sendEmailSchema = z.object({
-  studentIds: z.array(z.string().uuid()).min(1),
+  studentIds: z.array(z.string().uuid()).min(1).max(500),
   subject: z.string().min(1, "Naslov je obavezan").max(200),
   messageTemplate: z.string().min(1, "Poruka je obavezna").max(5000),
 });

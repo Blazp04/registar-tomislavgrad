@@ -15,6 +15,7 @@ export const auth = betterAuth({
   basePath: "/api/auth",
   emailAndPassword: {
     enabled: true,
+    disableSignUp: true,
   },
   trustedOrigins: env.CORS_ORIGINS,
   plugins: [jwt(), bearer()],

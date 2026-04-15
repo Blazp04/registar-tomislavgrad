@@ -40,7 +40,8 @@ export async function createStudentHandler(
   if (!parsed.success) {
     throw new ValidationError("Validacija nije uspjela", formatZodErrors(parsed.error));
   }
-  const student = await studentService.create(parsed.data);
+  const userId = request.user?.id;
+  const student = await studentService.create(parsed.data, userId);
   return reply.status(201).send(successResponse(student));
 }
 
@@ -52,7 +53,7 @@ export async function updateStudentHandler(
   if (!parsed.success) {
     throw new ValidationError("Validacija nije uspjela", formatZodErrors(parsed.error));
   }
-  const userId = (request as any).user?.id;
+  const userId = request.user?.id;
   const student = await studentService.update(request.params.id, parsed.data, userId);
   return reply.send(successResponse(student));
 }
@@ -61,7 +62,7 @@ export async function deleteStudentHandler(
   request: FastifyRequest<{ Params: { id: string } }>,
   reply: FastifyReply
 ) {
-  const userId = (request as any).user?.id;
+  const userId = request.user?.id;
   await studentService.remove(request.params.id, userId);
   return reply.status(204).send();
 }
@@ -82,7 +83,7 @@ export async function sendBulkSmsHandler(
   if (!parsed.success) {
     throw new ValidationError("Validacija nije uspjela", formatZodErrors(parsed.error));
   }
-  const userId = (request as any).user?.id;
+  const userId = request.user?.id;
   const result = await studentService.sendBulkSms(parsed.data, userId);
   return reply.send(successResponse(result));
 }
@@ -95,7 +96,7 @@ export async function sendBulkEmailHandler(
   if (!parsed.success) {
     throw new ValidationError("Validacija nije uspjela", formatZodErrors(parsed.error));
   }
-  const userId = (request as any).user?.id;
+  const userId = request.user?.id;
   const result = await studentService.sendBulkEmail(parsed.data, userId);
   return reply.send(successResponse(result));
 }

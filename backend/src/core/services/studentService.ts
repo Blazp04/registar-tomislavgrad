@@ -173,13 +173,18 @@ export const studentService = {
         .replace(/\{ime\}/gi, s.firstName)
         .replace(/\{prezime\}/gi, s.lastName);
 
-      const success = await sendEmail({
-        to: s.email,
-        subject: data.subject,
-        firstName: s.firstName,
-        lastName: s.lastName,
-        messageBody,
-      });
+      let success = false;
+      try {
+        success = await sendEmail({
+          to: s.email,
+          subject: data.subject,
+          firstName: s.firstName,
+          lastName: s.lastName,
+          messageBody,
+        });
+      } catch (err) {
+        console.error(`Failed to send email to ${s.email}:`, err);
+      }
 
       results.push({
         email: s.email,

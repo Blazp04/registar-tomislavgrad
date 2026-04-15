@@ -11,6 +11,6 @@ export async function authPreHandler(request: FastifyRequest, _reply: FastifyRep
     throw new UnauthorizedError("Potrebna je prijava");
   }
 
-  (request as any).user = session.user;
-  (request as any).session = session.session;
+  request.user = session.user;
+  request.session = session.session;
 }

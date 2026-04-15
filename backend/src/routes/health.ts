@@ -14,7 +14,13 @@ export function registerHealthRoutes(fastify: FastifyInstance) {
           properties: {
             status: { type: "string" },
             timestamp: { type: "string" },
-            database: { type: "string" },
+          },
+        },
+        503: {
+          type: "object",
+          properties: {
+            status: { type: "string" },
+            timestamp: { type: "string" },
           },
         },
       },
@@ -28,7 +34,6 @@ export function registerHealthRoutes(fastify: FastifyInstance) {
       return reply.status(statusCode).send({
         status,
         timestamp: new Date().toISOString(),
-        database: dbHealthy ? "ok" : "error",
       });
     },
   });

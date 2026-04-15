@@ -46,14 +46,18 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
     return true;
   }
 
-  await transporter.sendMail({
-    from: `"Općina Tomislavgrad" <${env.SMTP_FROM}>`,
-    to: options.to,
-    subject: options.subject,
-    html,
-  });
-
-  return true;
+  try {
+    await transporter.sendMail({
+      from: `"Općina Tomislavgrad" <${env.SMTP_FROM}>`,
+      to: options.to,
+      subject: options.subject,
+      html,
+    });
+    return true;
+  } catch (err) {
+    console.error(`Failed to send email to ${options.to}:`, err);
+    return false;
+  }
 }
 
 export function isEmailEnabled() {

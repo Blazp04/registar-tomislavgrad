@@ -1,4 +1,4 @@
-import { eq, and, isNull, ilike, sql, count, asc, desc, type SQL } from "drizzle-orm";
+import { eq, and, isNull, ilike, sql, count, asc, desc, inArray, type SQL } from "drizzle-orm";
 import { db } from "../database/db.js";
 import { student } from "../database/student-schema.js";
 import { codebook } from "../database/codebook-schema.js";
@@ -324,7 +324,7 @@ export const studentRepository = {
       })
       .from(student)
       .where(and(
-        sql`${student.id} IN ${ids}`,
+        inArray(student.id, ids),
         notDeleted,
       ));
   },

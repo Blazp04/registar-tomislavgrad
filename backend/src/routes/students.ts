@@ -189,6 +189,12 @@ export function registerStudentRoutes(fastify: FastifyInstance) {
   fastify.route({
     method: "POST",
     url: "/api/students",
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: "1 minute",
+      },
+    },
     schema: {
       description: "Register as a student (public form)",
       tags: ["Students"],

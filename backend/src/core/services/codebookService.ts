@@ -28,6 +28,13 @@ export const codebookService = {
   async update(id: string, data: UpdateCodebookDTO, userId?: string) {
     const item = await codebookRepository.findById(id);
     if (!item) throw new NotFoundError("Stavka šifrarnika nije pronađena");
+
+    // Check for duplicate name within the same type
+    if (data.name && data.name !== item.name) {
+      const existing = await codebookRepository.findByTypeAndName(item.type, data.name);
+      if (existing) throw new ConflictError("Stavka s tim imenom već postoji u šifrarniku");
+    }
+
     return codebookRepository.update(id, { name: data.name, updatedBy: userId });
   },
 
