@@ -17,6 +17,4 @@ RUN chmod +x /docker-entrypoint.d/40-env-config.sh
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
-ENV VITE_BACKEND_URL=http://localhost:3000
-
 EXPOSE 80
