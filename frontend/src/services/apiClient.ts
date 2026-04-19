@@ -1,8 +1,12 @@
 import { QueryClient, MutationCache } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+const runtimeConfig = window.__APP_CONFIG__;
+
 export const API_BASE_URL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+  runtimeConfig?.VITE_BACKEND_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  "http://localhost:3000";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
