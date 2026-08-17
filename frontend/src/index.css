@@ -129,13 +129,48 @@
   html {
     @apply scroll-smooth font-sans;
     }
+  ::selection {
+    background: #d9b55b;
+    color: #102d3d;
+    }
 }
 
 @layer components {
+  .section-kicker {
+    @apply flex items-center gap-3 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#a12825];
+    }
+  .section-kicker::before {
+    content: "";
+    @apply h-px w-8 bg-[#a12825];
+    }
   .prose-registry h2 {
     @apply mb-2 text-xl font-semibold tracking-tight text-slate-950;
   }
   .prose-registry a {
     @apply text-primary underline underline-offset-4;
   }
+}
+
+@keyframes landing-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-reveal {
+  animation: landing-enter 700ms cubic-bezier(.2,.7,.2,1) both;
+}
+
+.landing-delay-1 { animation-delay: 90ms; }
+.landing-delay-2 { animation-delay: 180ms; }
+.landing-delay-3 { animation-delay: 270ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .landing-reveal { animation: none; }
 }

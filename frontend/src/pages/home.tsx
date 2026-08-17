@@ -1,90 +1,237 @@
-import { ArrowRightIcon, CheckCircle2Icon, FileCheck2Icon, GraduationCapIcon, LockKeyholeIcon, UserRoundCheckIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  Clock3Icon,
+  FileCheck2Icon,
+  GraduationCapIcon,
+  ShieldCheckIcon,
+  UserRoundCheckIcon,
+} from "lucide-react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 
 const steps = [
-  { icon: UserRoundCheckIcon, number: "01", title: "Kreirajte račun", text: "Unesite samo ime, prezime i e-mail te potvrdite adresu." },
-  { icon: GraduationCapIcon, number: "02", title: "Dopunite profil", text: "Osobne i obrazovne podatke spremate u kratkim, jasnim koracima." },
-  { icon: FileCheck2Icon, number: "03", title: "Održavajte podatke ažurnima", text: "Jednom godišnje potvrdite profil i pregledajte evidentirane stipendije." },
+  {
+    number: "01",
+    icon: UserRoundCheckIcon,
+    title: "Otvorite svoj račun",
+    text: "Za početak su dovoljni ime, prezime, e-mail i lozinka. Profil možete nastaviti uređivati kada vam odgovara.",
+  },
+  {
+    number: "02",
+    icon: GraduationCapIcon,
+    title: "Dodajte obrazovanje",
+    text: "Evidentirajte srednju školu te sadašnje i prethodne studije. Svaki zapis ostaje dio vašeg obrazovnog puta.",
+  },
+  {
+    number: "03",
+    icon: FileCheck2Icon,
+    title: "Potvrdite podatke",
+    text: "Jednom godišnje provjerite profil kako bi Općina imala pouzdanu osnovu za planiranje studentske podrške.",
+  },
+];
+
+const questions = [
+  {
+    question: "Tko može otvoriti račun?",
+    answer: "Sadašnji i bivši studenti s prebivalištem na području Općine Tomislavgrad. U profil se može evidentirati trenutačni, završeni ili prekinuti studij.",
+  },
+  {
+    question: "Moram li cijeli profil dovršiti odmah?",
+    answer: "Ne. Račun otvarate s osnovnim podacima, a profil dopunjavate nakon prijave. Svaka cjelina sprema se zasebno pa možete nastaviti kasnije.",
+  },
+  {
+    question: "Mogu li evidentirati više studija?",
+    answer: "Da. Prethodni studiji ostaju sačuvani, a svaki novi studij dodajete kao zaseban zapis i po potrebi označite kao trenutačni.",
+  },
+  {
+    question: "Mogu li se ovdje prijaviti na stipendijski natječaj?",
+    answer: "Ne. Registar trenutačno služi evidenciji studenata i pregledu stipendija koje je administracija već zabilježila.",
+  },
 ];
 
 export default function HomePage() {
   return (
     <>
-      <section className="relative overflow-hidden border-b border-slate-200 bg-white">
-        <div className="absolute inset-y-0 right-0 hidden w-[42%] bg-[linear-gradient(135deg,#f8e9e6_0%,#f4f1ec_100%)] lg:block" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-18 md:py-24 lg:grid-cols-[1.2fr_.8fr] lg:px-8 lg:py-30">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary"><LockKeyholeIcon className="h-3.5 w-3.5" /> Sigurna usluga Općine Tomislavgrad</div>
-            <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-[-0.035em] text-balance sm:text-5xl lg:text-6xl">Vaši podaci o studiranju, uredno evidentirani i pod vašom kontrolom.</h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">Registar omogućuje studentima s područja Općine Tomislavgrad jednostavno održavanje profila i pregled stipendija, a Općini pouzdane podatke za planiranje podrške studentima.</p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg"><Link to="/register">Registriraj se <ArrowRightIcon /></Link></Button>
-              <Button asChild size="lg" variant="outline"><Link to="/login">Prijavi se</Link></Button>
+      <section className="relative overflow-hidden bg-[#f1eee6]">
+        <div className="absolute inset-x-0 top-0 h-px bg-[#102d3d]/20" aria-hidden="true" />
+        <div className="absolute -left-24 top-36 h-48 w-48 rounded-full border border-[#102d3d]/10" aria-hidden="true" />
+        <div className="absolute -left-8 top-52 h-20 w-20 rounded-full border border-[#102d3d]/10" aria-hidden="true" />
+
+        <div className="mx-auto flex min-h-[calc(100svh-4.5rem)] max-w-[90rem] items-center px-5 py-14 sm:px-8 md:py-20 lg:px-12 xl:px-16">
+          <div className="relative z-10 max-w-5xl">
+            <p className="landing-reveal flex items-center gap-3 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#a12825]">
+              <span className="h-px w-8 bg-[#a12825]" /> Digitalna usluga Općine Tomislavgrad
+            </p>
+
+            <h1 className="landing-reveal landing-delay-1 mt-7 max-w-4xl text-[clamp(3.6rem,7.7vw,7.4rem)] font-semibold leading-[0.83] tracking-[-0.072em] text-[#102d3d]">
+              Vaše studiranje,
+              <span className="mt-3 block font-display font-normal italic tracking-[-0.045em] text-[#b72e2a]">na jednom mjestu.</span>
+            </h1>
+
+            <p className="landing-reveal landing-delay-2 mt-8 max-w-xl text-base leading-7 text-[#52636c] sm:text-lg sm:leading-8">
+              Evidentirajte svoj obrazovni put, održavajte podatke ažurnima i pregledajte stipendije koje je Općina zabilježila — kroz jedan jasan profil.
+            </p>
+
+            <div className="landing-reveal landing-delay-3 mt-9 flex flex-col items-start gap-5 sm:flex-row sm:items-center">
+              <Button asChild size="lg" className="h-13 rounded-none bg-[#b72e2a] px-6 text-white shadow-none hover:bg-[#982320]">
+                <Link to="/register">Otvorite račun <ArrowRightIcon /></Link>
+              </Button>
+              <Link to="/login" className="group inline-flex items-center gap-2 text-sm font-semibold text-[#102d3d]">
+                Već imate račun? Prijavite se
+                <span className="h-px w-6 bg-[#102d3d] transition-[width] group-hover:w-10" aria-hidden="true" />
+              </Link>
             </div>
-            <p className="mt-5 text-sm text-slate-500">Registracija traje nekoliko minuta. Ostale podatke unosite nakon prijave.</p>
+
+            <div className="landing-reveal landing-delay-3 mt-11 grid max-w-xl gap-3 border-t border-[#bcc4c2] pt-5 text-sm text-[#52636c] sm:grid-cols-2">
+              <span className="flex items-center gap-2"><Clock3Icon className="h-4 w-4 text-[#a12825]" /> Račun za nekoliko minuta</span>
+              <span className="flex items-center gap-2"><GraduationCapIcon className="h-4 w-4 text-[#a12825]" /> Za sadašnje i bivše studente</span>
+            </div>
           </div>
-          <div className="relative mx-auto w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_24px_70px_rgba(15,23,42,.12)] lg:mr-0">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium uppercase tracking-widest text-slate-500">Studentski profil</p><p className="mt-1 text-xl font-semibold">Sve važno na jednom mjestu</p></div>
-              <img src="/grb-tomislavgrad.png" alt="" className="h-13 w-auto" />
+
+        </div>
+
+        <div className="bg-[#102d3d] text-white">
+          <div className="mx-auto grid max-w-[90rem] divide-y divide-white/12 px-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-8 lg:px-12 xl:px-16">
+            <div className="flex gap-4 py-6 sm:px-5 sm:first:pl-0">
+              <span className="font-display text-3xl text-[#d9b55b]">01</span>
+              <p className="text-sm leading-6 text-white/68"><strong className="block font-semibold text-white">Jedan račun</strong> za cijeli obrazovni put</p>
             </div>
-            <div className="mt-7 rounded-2xl bg-slate-950 p-5 text-white">
-              <div className="flex items-center justify-between text-sm"><span>Dovršenost profila</span><span className="font-semibold">75%</span></div>
-              <div className="mt-3 h-2 rounded-full bg-white/20"><div className="h-2 w-3/4 rounded-full bg-[#efaaa0]" /></div>
-              <p className="mt-4 text-xs leading-5 text-slate-300">Još samo podaci o trenutačnom studiju.</p>
+            <div className="flex gap-4 py-6 sm:px-5">
+              <span className="font-display text-3xl text-[#d9b55b]">02</span>
+              <p className="text-sm leading-6 text-white/68"><strong className="block font-semibold text-white">Više studija</strong> bez brisanja prethodnih</p>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border p-4"><p className="text-xs text-slate-500">Status podataka</p><p className="mt-1 text-sm font-semibold">Potrebna potvrda</p></div>
-              <div className="rounded-2xl border p-4"><p className="text-xs text-slate-500">Stipendije</p><p className="mt-1 text-sm font-semibold">2 zapisa</p></div>
+            <div className="flex gap-4 py-6 sm:px-5 sm:last:pr-0">
+              <span className="font-display text-3xl text-[#d9b55b]">03</span>
+              <p className="text-sm leading-6 text-white/68"><strong className="block font-semibold text-white">Godišnja potvrda</strong> za pouzdane podatke</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="kako-radi" className="scroll-mt-24 py-18 md:py-24">
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="max-w-2xl"><p className="text-sm font-semibold text-primary">Kako sustav funkcionira</p><h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">Tri jasna koraka, bez dugog obrasca</h2></div>
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {steps.map(({ icon: Icon, number, title, text }) => (
-              <article key={number} className="rounded-2xl border border-slate-200 bg-white p-6">
-                <div className="flex items-center justify-between"><div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/8 text-primary"><Icon className="h-5 w-5" /></div><span className="text-sm font-semibold text-slate-300">{number}</span></div>
-                <h3 className="mt-6 text-lg font-semibold">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
-              </article>
+      <section id="kako-radi" className="scroll-mt-24 bg-[#fbfaf6] py-20 md:py-30">
+        <div className="mx-auto max-w-[90rem] px-5 sm:px-8 lg:px-12 xl:px-16">
+          <div className="grid gap-8 lg:grid-cols-[.7fr_1.3fr] lg:items-end">
+            <p className="section-kicker">Kako funkcionira</p>
+            <div>
+              <h2 className="max-w-4xl text-4xl font-semibold leading-[0.98] tracking-[-0.055em] text-[#102d3d] sm:text-5xl md:text-6xl">
+                Kratki koraci. Profil koji ostaje s vama.
+              </h2>
+              <p className="mt-5 max-w-2xl leading-7 text-[#607079]">Ne morate ispunjavati jedan dugi obrazac. Svaki dio spremate zasebno i vraćate mu se kada želite.</p>
+            </div>
+          </div>
+
+          <ol className="mt-14 grid border-y border-[#cfd2cc] md:grid-cols-3 md:divide-x md:divide-[#cfd2cc]">
+            {steps.map(({ number, icon: Icon, title, text }, index) => (
+              <li key={number} className={`group relative py-8 md:min-h-[25rem] md:px-8 md:py-9 ${index > 0 ? "border-t border-[#cfd2cc] md:border-t-0" : ""}`}>
+                <div className="flex items-start justify-between">
+                  <span className="font-display text-5xl text-[#b72e2a]">{number}</span>
+                  <span className="grid h-12 w-12 place-items-center border border-[#bcc5c7] text-[#102d3d] transition-colors group-hover:border-[#d9b55b] group-hover:bg-[#d9b55b]">
+                    <Icon className="h-5 w-5" strokeWidth={1.7} />
+                  </span>
+                </div>
+                <div className="mt-16 md:mt-24">
+                  <h3 className="text-xl font-semibold tracking-[-0.025em] text-[#102d3d]">{title}</h3>
+                  <p className="mt-4 text-sm leading-7 text-[#64737a]">{text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section id="sto-trebate" className="scroll-mt-24 bg-[#dfe8e8] py-20 md:py-28">
+        <div className="mx-auto grid max-w-[90rem] gap-10 px-5 sm:px-8 lg:grid-cols-[.92fr_1.08fr] lg:gap-0 lg:px-12 xl:px-16">
+          <div className="bg-[#b72e2a] p-7 text-white sm:p-10 lg:p-14">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-white/65">Što trebate pripremiti</p>
+            <h2 className="mt-8 max-w-xl text-4xl font-semibold leading-[1.02] tracking-[-0.05em] sm:text-5xl">
+              Za račun malo. Za profil — ono što već znate.
+            </h2>
+            <div className="mt-12 border-t border-white/25 pt-6">
+              <p className="text-sm font-semibold">Pri otvaranju računa</p>
+              <p className="mt-2 text-sm leading-7 text-white/72">Ime i prezime, e-mail adresa i sigurna lozinka. Ostalo dopunjavate nakon prijave.</p>
+            </div>
+          </div>
+
+          <div className="bg-[#102d3d] p-7 text-white sm:p-10 lg:p-14">
+            <div className="flex items-center gap-3 text-[#d9b55b]">
+              <ShieldCheckIcon className="h-5 w-5" />
+              <p className="text-sm font-semibold">Podaci za vaš profil</p>
+            </div>
+            <ul className="mt-8 divide-y divide-white/15 border-y border-white/15">
+              {[
+                "Adresa, naselje i kontakt telefon",
+                "Završena srednja škola i smjer",
+                "Fakultet, studijski program i grad",
+                "Godina, način i status studija",
+              ].map((item, index) => (
+                <li key={item} className="grid grid-cols-[2rem_1fr] gap-4 py-4 text-sm leading-6 text-white/75">
+                  <span className="font-display text-lg text-[#d9b55b]">0{index + 1}</span>{item}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-6 flex items-start gap-3 text-xs leading-6 text-white/52">
+              <CheckIcon className="mt-1 h-3.5 w-3.5 shrink-0 text-[#d9b55b]" />
+              Ne prilažete osobne dokumente, potvrde ni druge datoteke.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="tko-se-moze-registrirati" className="scroll-mt-24 overflow-hidden bg-[#fbfaf6] py-20 md:py-30">
+        <div className="mx-auto max-w-[90rem] px-5 sm:px-8 lg:px-12 xl:px-16">
+          <div className="grid gap-12 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
+            <div>
+              <p className="section-kicker">Kome registar služi</p>
+              <h2 className="mt-7 max-w-4xl text-[clamp(2.8rem,6vw,6.2rem)] font-semibold leading-[0.9] tracking-[-0.065em] text-[#102d3d]">
+                Sadašnji studenti. Bivši studenti. <span className="font-display font-normal italic text-[#b72e2a]">Jedna zajednička slika.</span>
+              </h2>
+            </div>
+            <div className="border-l-2 border-[#d9b55b] pl-7 sm:pl-9">
+              <p className="text-lg leading-8 text-[#53666f]">Račun mogu otvoriti studenti s prebivalištem na području Općine Tomislavgrad — bez obzira je li njihov studij trenutačan, završen ili prekinut.</p>
+              <p className="mt-7 text-sm leading-7 text-[#69777d]">Ažurni podaci pomažu Općini bolje razumjeti gdje i što mladi studiraju te kvalitetnije planirati stipendije i druge oblike podrške.</p>
+              <Button asChild variant="outline" className="mt-9 h-12 rounded-none border-[#102d3d] bg-transparent px-5 text-[#102d3d] hover:bg-[#102d3d] hover:text-white">
+                <Link to="/register">Provjerite svoj profil <ArrowRightIcon /></Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="cesta-pitanja" className="scroll-mt-24 border-t border-[#d8d8d1] bg-[#f1eee6] py-20 md:py-28">
+        <div className="mx-auto grid max-w-[90rem] gap-12 px-5 sm:px-8 lg:grid-cols-[.72fr_1.28fr] lg:px-12 xl:px-16">
+          <div>
+            <p className="section-kicker">Prije registracije</p>
+            <h2 className="mt-6 text-4xl font-semibold tracking-[-0.05em] text-[#102d3d] sm:text-5xl">Najčešća pitanja</h2>
+            <p className="mt-5 max-w-sm text-sm leading-7 text-[#65747b]">Za dodatne informacije možete nam se javiti putem kontakt podataka na dnu stranice.</p>
+          </div>
+          <div className="border-t border-[#bdc4c2]">
+            {questions.map(({ question, answer }, index) => (
+              <details key={question} className="group border-b border-[#bdc4c2] py-6">
+                <summary className="flex cursor-pointer list-none items-center gap-4 text-base font-semibold tracking-[-0.02em] text-[#102d3d] marker:content-none sm:text-lg">
+                  <span className="font-display text-2xl font-normal text-[#b72e2a]">0{index + 1}</span>
+                  <span className="flex-1">{question}</span>
+                  <span className="relative h-8 w-8 shrink-0 border border-[#9fa9aa] transition-colors group-open:bg-[#102d3d]" aria-hidden="true">
+                    <span className="absolute left-1/2 top-1/2 h-px w-3 -translate-x-1/2 bg-current group-open:text-white" />
+                    <span className="absolute left-1/2 top-1/2 h-3 w-px -translate-y-1/2 bg-current transition-transform group-open:rotate-90 group-open:text-white" />
+                  </span>
+                </summary>
+                <p className="max-w-2xl pb-1 pt-4 pl-12 text-sm leading-7 text-[#65747b]">{answer}</p>
+              </details>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="tko-se-moze-registrirati" className="scroll-mt-24 border-y border-slate-200 bg-white py-18 md:py-24">
-        <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-2 lg:px-8">
-          <div><p className="text-sm font-semibold text-primary">Tko se može registrirati</p><h2 className="mt-2 text-3xl font-semibold tracking-tight">Studenti s područja Općine Tomislavgrad</h2><p className="mt-5 leading-7 text-slate-600">Račun mogu otvoriti osobe s prebivalištem na području Općine Tomislavgrad koje trenutačno studiraju ili žele evidentirati završeni ili prekinuti studij. Profil podržava više studija kroz vrijeme.</p></div>
-          <div className="space-y-4">
-            {["Evidencija srednjoškolskog i visokoškolskog obrazovanja", "Više zapisa studija i potpuna povijest", "Pregled stipendija po akademskim godinama", "Samostalno ažuriranje i godišnja potvrda podataka"].map((item) => <div key={item} className="flex gap-3 rounded-xl bg-[#fbfaf8] p-4 text-sm"><CheckCircle2Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />{item}</div>)}
+      <section className="bg-[#d9b55b]">
+        <div className="mx-auto flex max-w-[90rem] flex-col gap-8 px-5 py-14 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-12 xl:px-16">
+          <div>
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#102d3d]/60">Vaš prvi korak</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[#102d3d] sm:text-4xl">Otvorite račun danas. Profil dovršite svojim tempom.</h2>
           </div>
-        </div>
-      </section>
-
-      <section className="py-18 md:py-24">
-        <div className="mx-auto max-w-7xl px-5 lg:px-8">
-          <div className="rounded-3xl bg-slate-950 px-6 py-10 text-white md:px-10 lg:flex lg:items-center lg:justify-between">
-            <div className="max-w-2xl"><div className="flex items-center gap-2 text-sm font-semibold text-[#efaaa0]"><LockKeyholeIcon className="h-4 w-4" /> Zaštita podataka je dio sustava</div><h2 className="mt-3 text-2xl font-semibold md:text-3xl">Prikupljamo samo podatke potrebne za evidenciju i stipendije.</h2><p className="mt-4 text-sm leading-6 text-slate-300">Ne tražimo JMBG, broj osobne iskaznice ni skenirane dokumente. U svakom trenutku možete pregledati podatke, zatražiti izvoz, ispravak, ograničenje ili brisanje.</p></div>
-            <Button asChild variant="secondary" className="mt-6 lg:mt-0"><Link to="/privacy">Pročitaj politiku privatnosti</Link></Button>
-          </div>
-        </div>
-      </section>
-
-      <section id="cesta-pitanja" className="scroll-mt-24 border-t border-slate-200 bg-white py-18 md:py-24">
-        <div className="mx-auto max-w-3xl px-5 lg:px-8">
-          <h2 className="text-3xl font-semibold tracking-tight">Česta pitanja</h2>
-          <div className="mt-8 divide-y divide-slate-200 border-y border-slate-200">
-            {[
-              ["Moram li sve podatke unijeti pri registraciji?", "Ne. Pri registraciji unosite samo ime, prezime, e-mail i lozinku. Profil dopunjavate nakon prijave, korak po korak."],
-              ["Mogu li evidentirati više studija?", "Da. Možete sačuvati prethodne studije i dodati novi, trenutačni studij."],
-              ["Mogu li se prijaviti na stipendijski natječaj kroz sustav?", "Ne. Prva verzija služi evidenciji i pregledu stipendija, bez online prijava na natječaje."],
-              ["Kako mogu ispraviti ili izvesti svoje podatke?", "Profil možete sami ažurirati, a u odjeljku Privatnost možete preuzeti podatke ili poslati službeni zahtjev."],
-            ].map(([question, answer]) => <details key={question} className="group py-5"><summary className="cursor-pointer list-none pr-8 font-medium">{question}</summary><p className="mt-3 text-sm leading-6 text-slate-600">{answer}</p></details>)}
-          </div>
+          <Button asChild size="lg" className="h-13 shrink-0 rounded-none bg-[#102d3d] px-6 text-white hover:bg-[#071e2a]">
+            <Link to="/register">Započnite registraciju <ArrowRightIcon /></Link>
+          </Button>
         </div>
       </section>
     </>

@@ -348,7 +348,7 @@ export const studentRepository = {
         active: sql<number>`count(distinct ${studentProfile.id}) filter (where exists(select 1 from student_educations e where e.profile_id=${studentProfile.id} and e.study_status='active'))::int`,
         completed: sql<number>`count(distinct ${studentProfile.id}) filter (where exists(select 1 from student_educations e where e.profile_id=${studentProfile.id} and e.study_status='completed'))::int`,
         unverified: sql<number>`count(distinct ${studentProfile.id}) filter (where ${studentProfile.verifiedAcademicYear} is distinct from ${currentAcademicYear})::int`,
-        stale: sql<number>`count(distinct ${studentProfile.id}) filter (where ${studentProfile.updatedAt} < ${staleCutoff})::int`,
+        stale: sql<number>`count(distinct ${studentProfile.id}) filter (where ${lt(studentProfile.updatedAt, staleCutoff)})::int`,
       }).from(studentProfile).innerJoin(user, eq(studentProfile.userId, user.id)).where(eq(user.role, "student")),
       db.select({ name: codebook.name, count: countDistinct(studentEducation.profileId) }).from(studentEducation).innerJoin(codebook, eq(studentEducation.cityId, codebook.id)).where(eq(studentEducation.type, "higher_education")).groupBy(codebook.name).orderBy(desc(countDistinct(studentEducation.profileId))),
       db.select({ name: codebook.name, count: countDistinct(studentEducation.profileId) }).from(studentEducation).innerJoin(codebook, eq(studentEducation.facultyId, codebook.id)).where(eq(studentEducation.type, "higher_education")).groupBy(codebook.name).orderBy(desc(countDistinct(studentEducation.profileId))),
