@@ -1,583 +1,92 @@
-import { useState } from "react"
-import { useCodebooks } from "@/services/codebooks"
-import { useCreateStudent } from "@/services/students"
-import { createStudentSchema } from "@/lib/validation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { CheckCircle2Icon } from "lucide-react"
+import { ArrowRightIcon, CheckCircle2Icon, FileCheck2Icon, GraduationCapIcon, LockKeyholeIcon, UserRoundCheckIcon } from "lucide-react";
+import { Link } from "react-router";
+import { Button } from "@/components/ui/button";
 
-const DUMMY_UUID = "00000000-0000-0000-0000-000000000000"
-
-const initialForm = {
-  firstName: "",
-  lastName: "",
-  fatherName: "",
-  email: "",
-  address: "",
-  phone: "",
-  isCurrentStudent: true,
-  isEmployed: false,
-  isWorkingInField: false,
-  // High school
-  highSchoolType: "" as "" | "gimnazija" | "strukovna",
-  highSchoolDuration: "" as "" | "trogodisnja" | "cetverogodisnja" | "petogodisnja",
-  highSchoolProfessionId: "",
-  highSchoolCityId: "",
-  customHighSchoolProfessionName: "",
-  // Faculty
-  facultyId: "",
-  fieldOfStudyId: "",
-  facultyCityId: "",
-  customFacultyName: "",
-  customFieldOfStudyName: "",
-  customCityName: "",
-}
+const steps = [
+  { icon: UserRoundCheckIcon, number: "01", title: "Kreirajte račun", text: "Unesite samo ime, prezime i e-mail te potvrdite adresu." },
+  { icon: GraduationCapIcon, number: "02", title: "Dopunite profil", text: "Osobne i obrazovne podatke spremate u kratkim, jasnim koracima." },
+  { icon: FileCheck2Icon, number: "03", title: "Održavajte podatke ažurnima", text: "Jednom godišnje potvrdite profil i pregledajte evidentirane stipendije." },
+];
 
 export default function HomePage() {
-  const { data: faculties } = useCodebooks("faculty")
-  const { data: fields } = useCodebooks("field_of_study")
-  const { data: professions } = useCodebooks("high_school_profession")
-  const { data: cities } = useCodebooks("city")
-  const createStudent = useCreateStudent()
-
-  const [submitted, setSubmitted] = useState(false)
-  const [form, setForm] = useState(initialForm)
-  const [error, setError] = useState("")
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-
-  const useFacultyOther = form.facultyId === "other"
-  const useFieldOther = form.fieldOfStudyId === "other"
-  const useProfessionOther = form.highSchoolProfessionId === "other"
-
-  const isGimnazija = form.highSchoolType === "gimnazija"
-
-  const FieldError = ({ field }: { field: string }) => {
-    if (!fieldErrors[field]) return null
-    return <p className="mt-1 text-xs text-red-600">{fieldErrors[field]}</p>
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setFieldErrors({})
-
-    const payload: Record<string, unknown> = {
-      firstName: form.firstName,
-      lastName: form.lastName,
-      fatherName: form.fatherName,
-      email: form.email,
-      address: form.address,
-      phone: form.phone,
-      isCurrentStudent: form.isCurrentStudent,
-      isEmployed: form.isEmployed,
-      isWorkingInField: form.isEmployed ? form.isWorkingInField : false,
-      highSchoolType: form.highSchoolType,
-      highSchoolDuration: isGimnazija ? "cetverogodisnja" : form.highSchoolDuration,
-      highSchoolProfessionId: isGimnazija ? undefined : (useProfessionOther ? DUMMY_UUID : form.highSchoolProfessionId || undefined),
-      highSchoolCityId: form.highSchoolCityId === "other" ? DUMMY_UUID : form.highSchoolCityId,
-      facultyId: useFacultyOther ? DUMMY_UUID : form.facultyId,
-      fieldOfStudyId: useFieldOther ? DUMMY_UUID : form.fieldOfStudyId,
-      facultyCityId: form.facultyCityId === "other" ? DUMMY_UUID : form.facultyCityId,
-    }
-
-    if (useProfessionOther && !isGimnazija) {
-      if (!form.customHighSchoolProfessionName.trim()) {
-        setError("Unesite naziv struke")
-        return
-      }
-      payload.customHighSchoolProfessionName = form.customHighSchoolProfessionName.trim()
-    }
-    if (form.highSchoolCityId === "other" || form.facultyCityId === "other") {
-      if (!form.customCityName.trim()) {
-        setError("Unesite naziv grada")
-        return
-      }
-      payload.customCityName = form.customCityName.trim()
-    }
-
-    if (useFacultyOther) {
-      if (!form.customFacultyName.trim()) {
-        setError("Unesite naziv fakulteta")
-        return
-      }
-      payload.customFacultyName = form.customFacultyName.trim()
-    }
-    if (useFieldOther) {
-      if (!form.customFieldOfStudyName.trim()) {
-        setError("Unesite naziv struke")
-        return
-      }
-      payload.customFieldOfStudyName = form.customFieldOfStudyName.trim()
-    }
-
-    try {
-      // Validate with Zod before submitting
-      const result = createStudentSchema.safeParse(payload)
-      if (!result.success) {
-        const errors: Record<string, string> = {}
-        for (const issue of result.error.issues) {
-          const path = issue.path.join(".")
-          if (!errors[path]) errors[path] = issue.message
-        }
-        setFieldErrors(errors)
-        setError("Molimo ispravite greške u obrascu")
-        return
-      }
-      await createStudent.mutateAsync(payload as any)
-      setSubmitted(true)
-    } catch (err: any) {
-      // Handle server-side validation errors
-      if (err.message) {
-        try {
-          const body = JSON.parse(err.message)
-          if (body?.error?.errors) {
-            const errors: Record<string, string> = {}
-            for (const [field, msgs] of Object.entries(body.error.errors)) {
-              errors[field] = (msgs as string[]).join(", ")
-            }
-            setFieldErrors(errors)
-          }
-        } catch {
-          // Not JSON, use as-is
-        }
-      }
-      setError(err.message ?? "Greška pri slanju podataka")
-    }
-  }
-
-  if (submitted) {
-    return (
-      <div className="min-h-svh bg-white">
-        <header className="border-b border-gray-200 bg-[#c0392b]">
-          <div className="mx-auto flex h-14 items-center justify-between px-6">
-            <span className="text-sm font-semibold text-white">Općina Tomislavgrad</span>
-          </div>
-        </header>
-        <div className="mx-auto flex min-h-[80vh] max-w-lg flex-col items-center justify-center px-6 py-20 text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-50">
-            <CheckCircle2Icon className="h-10 w-10 text-green-600" />
-          </div>
-          <h2 className="mt-6 text-2xl font-bold text-gray-900">Prijava uspješno poslana</h2>
-          <p className="mt-3 text-gray-600 leading-relaxed">
-            Vaši podaci su zabilježeni u registar studenata općine Tomislavgrad.
-            Kontaktirat ćemo vas po potrebi.
-          </p>
-          <button
-            onClick={() => { setSubmitted(false); setForm(initialForm) }}
-            className="mt-8 rounded-lg bg-[#c0392b] px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#a93226]"
-          >
-            Nova prijava
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-svh bg-gray-50">
-      {/* Header */}
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex h-20 items-center gap-4 px-6">
-          <img
-            src="/grb-tomislavgrad.png"
-            alt="Grb općine Tomislavgrad"
-            className="h-14 w-auto"
-          />
-        </div>
-      </header>
-
-      {/* Hero banner */}
-      <section className="bg-[#c0392b]">
-        <div className="mx-auto px-6 py-10 md:py-14">
-          <h1 className="text-2xl font-bold text-white md:text-3xl">
-            Registar studenata općine Tomislavgrad
-          </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-red-100 md:text-base">
-            Općina Tomislavgrad vodi evidenciju studenata s područja općine kako bi pratila
-            obrazovne trendove, planirala podršku studentima i održavala kontakt sa
-            mladim obrazovanim ljudima iz naše zajednice.
-          </p>
-        </div>
-      </section>
-
-      {/* Registration form — full width */}
-      <section className="px-6 py-8">
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          {/* Form header */}
-          <div className="border-b border-gray-200 bg-gray-50 px-6 py-4 md:px-8">
-            <h2 className="text-lg font-bold text-gray-900">Prijava u registar</h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Popunite obrazac sa vašim podacima. Sva polja su obavezna.
-            </p>
+    <>
+      <section className="relative overflow-hidden border-b border-slate-200 bg-white">
+        <div className="absolute inset-y-0 right-0 hidden w-[42%] bg-[linear-gradient(135deg,#f8e9e6_0%,#f4f1ec_100%)] lg:block" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 py-18 md:py-24 lg:grid-cols-[1.2fr_.8fr] lg:px-8 lg:py-30">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary"><LockKeyholeIcon className="h-3.5 w-3.5" /> Sigurna usluga Općine Tomislavgrad</div>
+            <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-[-0.035em] text-balance sm:text-5xl lg:text-6xl">Vaši podaci o studiranju, uredno evidentirani i pod vašom kontrolom.</h1>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">Registar omogućuje studentima s područja Općine Tomislavgrad jednostavno održavanje profila i pregled stipendija, a Općini pouzdane podatke za planiranje podrške studentima.</p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg"><Link to="/register">Registriraj se <ArrowRightIcon /></Link></Button>
+              <Button asChild size="lg" variant="outline"><Link to="/login">Prijavi se</Link></Button>
+            </div>
+            <p className="mt-5 text-sm text-slate-500">Registracija traje nekoliko minuta. Ostale podatke unosite nakon prijave.</p>
           </div>
-
-          <form onSubmit={handleSubmit} className="divide-y divide-gray-100">
-            {/* Osobni podaci */}
-            <div className="px-6 py-6 md:px-8">
-              <h3 className="mb-4 text-sm font-semibold text-[#c0392b]">Osobni podaci</h3>
-              <div className="grid gap-x-6 gap-y-4 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="firstName" className="text-sm text-gray-700">Ime</Label>
-                  <Input
-                    id="firstName"
-                    required
-                    placeholder="Marko"
-                    value={form.firstName}
-                    onChange={(e) => setForm((p) => ({ ...p, firstName: e.target.value }))}
-                    className={fieldErrors.firstName ? "border-red-500" : ""}
-                  />
-                  <FieldError field="firstName" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="lastName" className="text-sm text-gray-700">Prezime</Label>
-                  <Input
-                    id="lastName"
-                    required
-                    placeholder="Marković"
-                    value={form.lastName}
-                    onChange={(e) => setForm((p) => ({ ...p, lastName: e.target.value }))}
-                    className={fieldErrors.lastName ? "border-red-500" : ""}
-                  />
-                  <FieldError field="lastName" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="fatherName" className="text-sm text-gray-700">Ime oca</Label>
-                  <Input
-                    id="fatherName"
-                    required
-                    placeholder="Ivan"
-                    value={form.fatherName}
-                    onChange={(e) => setForm((p) => ({ ...p, fatherName: e.target.value }))}
-                    className={fieldErrors.fatherName ? "border-red-500" : ""}
-                  />
-                  <FieldError field="fatherName" />
-                </div>
-              </div>
-              <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-sm text-gray-700">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    placeholder="marko@example.com"
-                    value={form.email}
-                    onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-                    className={fieldErrors.email ? "border-red-500" : ""}
-                  />
-                  <FieldError field="email" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-sm text-gray-700">Broj telefona</Label>
-                  <Input
-                    id="phone"
-                    required
-                    placeholder="063 123 456"
-                    value={form.phone}
-                    onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
-                    className={fieldErrors.phone ? "border-red-500" : ""}
-                  />
-                  <FieldError field="phone" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="address" className="text-sm text-gray-700">Adresa</Label>
-                  <Input
-                    id="address"
-                    required
-                    placeholder="Ul. kralja Tomislava 10"
-                    value={form.address}
-                    onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
-                    className={fieldErrors.address ? "border-red-500" : ""}
-                  />
-                  <FieldError field="address" />
-                </div>
-              </div>
+          <div className="relative mx-auto w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 shadow-[0_24px_70px_rgba(15,23,42,.12)] lg:mr-0">
+            <div className="flex items-center justify-between">
+              <div><p className="text-xs font-medium uppercase tracking-widest text-slate-500">Studentski profil</p><p className="mt-1 text-xl font-semibold">Sve važno na jednom mjestu</p></div>
+              <img src="/grb-tomislavgrad.png" alt="" className="h-13 w-auto" />
             </div>
-
-            {/* Srednja škola */}
-            <div className="px-6 py-6 md:px-8">
-              <h3 className="mb-4 text-sm font-semibold text-[#c0392b]">Srednja škola</h3>
-              <div className="space-y-4">
-                <div className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label className="text-sm text-gray-700">Vrsta srednje škole</Label>
-                    <Select
-                      value={form.highSchoolType}
-                      onValueChange={(v) => setForm((p) => ({
-                        ...p,
-                        highSchoolType: v as "gimnazija" | "strukovna",
-                        highSchoolDuration: v === "gimnazija" ? "cetverogodisnja" : "",
-                        highSchoolProfessionId: v === "gimnazija" ? "" : p.highSchoolProfessionId,
-                      }))}
-                    >
-                      <SelectTrigger className={`w-full ${fieldErrors.highSchoolType ? "border-red-500" : ""}`}>
-                        <SelectValue placeholder="Odaberite vrstu" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gimnazija">Gimnazija</SelectItem>
-                        <SelectItem value="strukovna">Strukovna</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FieldError field="highSchoolType" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm text-gray-700">Trajanje</Label>
-                    {isGimnazija ? (
-                      <Input value="Četverogodišnja" disabled className="bg-gray-100" />
-                    ) : (
-                      <Select
-                        value={form.highSchoolDuration}
-                        onValueChange={(v) => setForm((p) => ({ ...p, highSchoolDuration: v as any }))}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Odaberite trajanje" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="trogodisnja">Trogodišnja</SelectItem>
-                          <SelectItem value="cetverogodisnja">Četverogodišnja</SelectItem>
-                          <SelectItem value="petogodisnja">Petogodišnja</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                    <FieldError field="highSchoolDuration" />
-                  </div>
-                </div>
-                {form.highSchoolType === "strukovna" && (
-                  <div className="space-y-1.5">
-                    <Label className="text-sm text-gray-700">Struka</Label>
-                    <Select
-                      value={form.highSchoolProfessionId}
-                      onValueChange={(v) => setForm((p) => ({ ...p, highSchoolProfessionId: v, customHighSchoolProfessionName: "" }))}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Odaberite struku" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {professions?.map((f) => (
-                          <SelectItem key={f.id} value={f.id!}>{f.name}</SelectItem>
-                        ))}
-                        <SelectItem value="other">Drugo (unesite ručno)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FieldError field="highSchoolProfessionId" />
-                    {useProfessionOther && (
-                      <Input
-                        className="mt-2"
-                        placeholder="Unesite naziv struke"
-                        value={form.customHighSchoolProfessionName}
-                        onChange={(e) => setForm((p) => ({ ...p, customHighSchoolProfessionName: e.target.value }))}
-                      />
-                    )}
-                  </div>
-                )}
-                <div className="space-y-1.5">
-                  <Label className="text-sm text-gray-700">Grad (srednja škola)</Label>
-                  <Select
-                    value={form.highSchoolCityId}
-                    onValueChange={(v) => setForm((p) => ({ ...p, highSchoolCityId: v, customCityName: v === "other" ? p.customCityName : "" }))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Odaberite grad" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities?.map((f) => (
-                        <SelectItem key={f.id} value={f.id!}>{f.name}</SelectItem>
-                      ))}
-                      <SelectItem value="other">Drugo (unesite ručno)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FieldError field="highSchoolCityId" />
-                  {form.highSchoolCityId === "other" && (
-                    <Input
-                      className="mt-2"
-                      placeholder="Unesite naziv grada"
-                      value={form.customCityName}
-                      onChange={(e) => setForm((p) => ({ ...p, customCityName: e.target.value }))}
-                    />
-                  )}
-                </div>
-              </div>
+            <div className="mt-7 rounded-2xl bg-slate-950 p-5 text-white">
+              <div className="flex items-center justify-between text-sm"><span>Dovršenost profila</span><span className="font-semibold">75%</span></div>
+              <div className="mt-3 h-2 rounded-full bg-white/20"><div className="h-2 w-3/4 rounded-full bg-[#efaaa0]" /></div>
+              <p className="mt-4 text-xs leading-5 text-slate-300">Još samo podaci o trenutačnom studiju.</p>
             </div>
-
-            {/* Obrazovanje — each field full width */}
-            <div className="px-6 py-6 md:px-8">
-              <h3 className="mb-4 text-sm font-semibold text-[#c0392b]">Fakultet</h3>
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-sm text-gray-700">Fakultet</Label>
-                  <Select
-                    value={form.facultyId}
-                    onValueChange={(v) => setForm((p) => ({ ...p, facultyId: v, customFacultyName: "" }))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Odaberite fakultet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {faculties?.map((f) => (
-                        <SelectItem key={f.id} value={f.id!}>{f.name}</SelectItem>
-                      ))}
-                      <SelectItem value="other">Drugo (unesite ručno)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FieldError field="facultyId" />
-                  {useFacultyOther && (
-                    <Input
-                      className="mt-2"
-                      placeholder="Unesite puno ime fakulteta"
-                      value={form.customFacultyName}
-                      onChange={(e) => setForm((p) => ({ ...p, customFacultyName: e.target.value }))}
-                    />
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-sm text-gray-700">Smjer</Label>
-                  <Select
-                    value={form.fieldOfStudyId}
-                    onValueChange={(v) => setForm((p) => ({ ...p, fieldOfStudyId: v, customFieldOfStudyName: "" }))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Odaberite smjer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {fields?.map((f) => (
-                        <SelectItem key={f.id} value={f.id!}>{f.name}</SelectItem>
-                      ))}
-                      <SelectItem value="other">Drugo (unesite ručno)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FieldError field="fieldOfStudyId" />
-                  {useFieldOther && (
-                    <Input
-                      className="mt-2"
-                      placeholder="Unesite naziv smjera"
-                      value={form.customFieldOfStudyName}
-                      onChange={(e) => setForm((p) => ({ ...p, customFieldOfStudyName: e.target.value }))}
-                    />
-                  )}
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-sm text-gray-700">Grad (fakultet)</Label>
-                  <Select
-                    value={form.facultyCityId}
-                    onValueChange={(v) => setForm((p) => ({ ...p, facultyCityId: v, customCityName: v === "other" ? p.customCityName : "" }))}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Odaberite grad" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities?.map((f) => (
-                        <SelectItem key={f.id} value={f.id!}>{f.name}</SelectItem>
-                      ))}
-                      <SelectItem value="other">Drugo (unesite ručno)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FieldError field="facultyCityId" />
-                  {form.facultyCityId === "other" && (
-                    <Input
-                      className="mt-2"
-                      placeholder="Unesite naziv grada"
-                      value={form.customCityName}
-                      onChange={(e) => setForm((p) => ({ ...p, customCityName: e.target.value }))}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="px-6 py-6 md:px-8">
-              <h3 className="mb-4 text-sm font-semibold text-[#c0392b]">Status</h3>
-              <div className="space-y-3">
-                <label htmlFor="isCurrentStudent" className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50 has-[[data-state=checked]]:border-[#c0392b]/30 has-[[data-state=checked]]:bg-red-50/50">
-                  <Checkbox
-                    id="isCurrentStudent"
-                    checked={form.isCurrentStudent}
-                    onCheckedChange={(v) => setForm((p) => ({ ...p, isCurrentStudent: !!v }))}
-                  />
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">Trenutno sam student</div>
-                    <div className="text-xs text-gray-500">Pohađam fakultet ili visoku školu</div>
-                  </div>
-                </label>
-
-                <label htmlFor="isEmployed" className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50 has-[[data-state=checked]]:border-[#c0392b]/30 has-[[data-state=checked]]:bg-red-50/50">
-                  <Checkbox
-                    id="isEmployed"
-                    checked={form.isEmployed}
-                    onCheckedChange={(v) => setForm((p) => ({ ...p, isEmployed: !!v, isWorkingInField: false }))}
-                  />
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">Trenutno sam zaposlen/a</div>
-                    <div className="text-xs text-gray-500">Zaposlenje na puno ili nepuno radno vrijeme</div>
-                  </div>
-                </label>
-
-                {form.isEmployed && (
-                  <label htmlFor="isWorkingInField" className="ml-7 flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-4 transition-colors hover:bg-gray-50 has-[[data-state=checked]]:border-[#c0392b]/30 has-[[data-state=checked]]:bg-red-50/50">
-                    <Checkbox
-                      id="isWorkingInField"
-                      checked={form.isWorkingInField}
-                      onCheckedChange={(v) => setForm((p) => ({ ...p, isWorkingInField: !!v }))}
-                    />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">Radim u struci</div>
-                      <div className="text-xs text-gray-500">Posao odgovara smjeru mog obrazovanja</div>
-                    </div>
-                  </label>
-                )}
-              </div>
-            </div>
-
-            {/* Error + Submit */}
-            <div className="bg-gray-50 px-6 py-5 md:px-8">
-              {error && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {error}
-                </div>
-              )}
-              <div className="flex items-center justify-between gap-4">
-                <p className="hidden text-xs text-gray-400 sm:block">
-                  Vaši podaci se koriste isključivo u svrhu evidencije studenata.
-                </p>
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={createStudent.isPending}
-                  className="w-full bg-[#c0392b] text-white hover:bg-[#a93226] sm:w-auto"
-                >
-                  {createStudent.isPending ? "Šaljem..." : "Pošalji prijavu"}
-                </Button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-200 bg-[#2c3e50]">
-        <div className="mx-auto px-6 py-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div>
-              <div className="text-sm font-semibold text-white">Općina Tomislavgrad</div>
-              <div className="mt-1 text-xs text-gray-400">
-                Hercegbosanska županija · Federacija Bosne i Hercegovine
-              </div>
-            </div>
-            <div className="text-xs text-gray-500">
-              &copy; {new Date().getFullYear()} Općina Tomislavgrad. Sva prava pridržana.
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border p-4"><p className="text-xs text-slate-500">Status podataka</p><p className="mt-1 text-sm font-semibold">Potrebna potvrda</p></div>
+              <div className="rounded-2xl border p-4"><p className="text-xs text-slate-500">Stipendije</p><p className="mt-1 text-sm font-semibold">2 zapisa</p></div>
             </div>
           </div>
         </div>
-      </footer>
-    </div>
-  )
+      </section>
+
+      <section id="kako-radi" className="scroll-mt-24 py-18 md:py-24">
+        <div className="mx-auto max-w-7xl px-5 lg:px-8">
+          <div className="max-w-2xl"><p className="text-sm font-semibold text-primary">Kako sustav funkcionira</p><h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">Tri jasna koraka, bez dugog obrasca</h2></div>
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            {steps.map(({ icon: Icon, number, title, text }) => (
+              <article key={number} className="rounded-2xl border border-slate-200 bg-white p-6">
+                <div className="flex items-center justify-between"><div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/8 text-primary"><Icon className="h-5 w-5" /></div><span className="text-sm font-semibold text-slate-300">{number}</span></div>
+                <h3 className="mt-6 text-lg font-semibold">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="tko-se-moze-registrirati" className="scroll-mt-24 border-y border-slate-200 bg-white py-18 md:py-24">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 lg:grid-cols-2 lg:px-8">
+          <div><p className="text-sm font-semibold text-primary">Tko se može registrirati</p><h2 className="mt-2 text-3xl font-semibold tracking-tight">Studenti s područja Općine Tomislavgrad</h2><p className="mt-5 leading-7 text-slate-600">Račun mogu otvoriti osobe s prebivalištem na području Općine Tomislavgrad koje trenutačno studiraju ili žele evidentirati završeni ili prekinuti studij. Profil podržava više studija kroz vrijeme.</p></div>
+          <div className="space-y-4">
+            {["Evidencija srednjoškolskog i visokoškolskog obrazovanja", "Više zapisa studija i potpuna povijest", "Pregled stipendija po akademskim godinama", "Samostalno ažuriranje i godišnja potvrda podataka"].map((item) => <div key={item} className="flex gap-3 rounded-xl bg-[#fbfaf8] p-4 text-sm"><CheckCircle2Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />{item}</div>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-18 md:py-24">
+        <div className="mx-auto max-w-7xl px-5 lg:px-8">
+          <div className="rounded-3xl bg-slate-950 px-6 py-10 text-white md:px-10 lg:flex lg:items-center lg:justify-between">
+            <div className="max-w-2xl"><div className="flex items-center gap-2 text-sm font-semibold text-[#efaaa0]"><LockKeyholeIcon className="h-4 w-4" /> Zaštita podataka je dio sustava</div><h2 className="mt-3 text-2xl font-semibold md:text-3xl">Prikupljamo samo podatke potrebne za evidenciju i stipendije.</h2><p className="mt-4 text-sm leading-6 text-slate-300">Ne tražimo JMBG, broj osobne iskaznice ni skenirane dokumente. U svakom trenutku možete pregledati podatke, zatražiti izvoz, ispravak, ograničenje ili brisanje.</p></div>
+            <Button asChild variant="secondary" className="mt-6 lg:mt-0"><Link to="/privacy">Pročitaj politiku privatnosti</Link></Button>
+          </div>
+        </div>
+      </section>
+
+      <section id="cesta-pitanja" className="scroll-mt-24 border-t border-slate-200 bg-white py-18 md:py-24">
+        <div className="mx-auto max-w-3xl px-5 lg:px-8">
+          <h2 className="text-3xl font-semibold tracking-tight">Česta pitanja</h2>
+          <div className="mt-8 divide-y divide-slate-200 border-y border-slate-200">
+            {[
+              ["Moram li sve podatke unijeti pri registraciji?", "Ne. Pri registraciji unosite samo ime, prezime, e-mail i lozinku. Profil dopunjavate nakon prijave, korak po korak."],
+              ["Mogu li evidentirati više studija?", "Da. Možete sačuvati prethodne studije i dodati novi, trenutačni studij."],
+              ["Mogu li se prijaviti na stipendijski natječaj kroz sustav?", "Ne. Prva verzija služi evidenciji i pregledu stipendija, bez online prijava na natječaje."],
+              ["Kako mogu ispraviti ili izvesti svoje podatke?", "Profil možete sami ažurirati, a u odjeljku Privatnost možete preuzeti podatke ili poslati službeni zahtjev."],
+            ].map(([question, answer]) => <details key={question} className="group py-5"><summary className="cursor-pointer list-none pr-8 font-medium">{question}</summary><p className="mt-3 text-sm leading-6 text-slate-600">{answer}</p></details>)}
+          </div>
+        </div>
+      </section>
+    </>
+  );
 }

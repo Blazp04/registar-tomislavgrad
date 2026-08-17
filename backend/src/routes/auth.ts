@@ -31,7 +31,11 @@ export function registerAuthRoutes(fastify: FastifyInstance) {
       const response = await auth.handler(req);
 
       reply.status(response.status);
-      response.headers.forEach((value, key) => reply.header(key, value));
+      response.headers.forEach((value, key) => {
+        if (key.toLowerCase() !== "set-cookie") reply.header(key, value);
+      });
+      const cookies = response.headers.getSetCookie?.() ?? [];
+      if (cookies.length > 0) reply.header("set-cookie", cookies);
       reply.send(response.body ? await response.text() : null);
     },
   });

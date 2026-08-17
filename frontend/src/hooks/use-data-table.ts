@@ -16,7 +16,7 @@ import { useSearchParams } from "react-router"
 
 interface UseDataTableProps<TData> {
   data: TData[]
-  columns: ColumnDef<TData, any>[]
+  columns: ColumnDef<TData, unknown>[]
   pageCount: number
   defaultPerPage?: number
 }
@@ -102,6 +102,8 @@ export function useDataTable<TData>({
     [sorting, updateSearchParams],
   )
 
+  // TanStack Table exposes non-memoizable callbacks by design.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -115,8 +117,8 @@ export function useDataTable<TData>({
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
-    onPaginationChange: onPaginationChange as any,
-    onSortingChange: onSortingChange as any,
+    onPaginationChange,
+    onSortingChange,
     onColumnVisibilityChange: setColumnVisibility,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),

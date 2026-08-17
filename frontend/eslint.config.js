@@ -19,5 +19,10 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Route modules and shadcn components intentionally export helpers next to
+      // components. This only affects development HMR, not application safety.
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])

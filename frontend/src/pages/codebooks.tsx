@@ -1,191 +1,22 @@
-import { useState } from "react"
-import { useCodebooks, useCreateCodebook, useDeleteCodebook, useUpdateCodebook, type CodebookType } from "@/services/codebooks"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PlusIcon, TrashIcon, PencilIcon } from "lucide-react"
+import { useState } from "react";
+import { CheckIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { codebookTypes, useCodebooks, useCreateCodebook, useDeleteCodebook, useUpdateCodebook, type CodebookType } from "@/services/codebooks";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-const codebookTabs: { type: CodebookType; label: string }[] = [
-  { type: "faculty", label: "Fakulteti" },
-  { type: "field_of_study", label: "Smjerovi" },
-  { type: "high_school_profession", label: "Struke" },
-  { type: "city", label: "Gradovi" },
-]
-
-function CodebookTab({ type }: { type: CodebookType }) {
-  const { data: items, isPending } = useCodebooks(type)
-  const createCodebook = useCreateCodebook()
-  const deleteCodebook = useDeleteCodebook()
-  const updateCodebook = useUpdateCodebook()
-
-  const [addOpen, setAddOpen] = useState(false)
-  const [addName, setAddName] = useState("")
-
-  const [editOpen, setEditOpen] = useState(false)
-  const [editId, setEditId] = useState("")
-  const [editName, setEditName] = useState("")
-
-  const handleAdd = async () => {
-    if (!addName.trim()) return
-    await createCodebook.mutateAsync({ type, name: addName.trim() })
-    setAddName("")
-    setAddOpen(false)
-  }
-
-  const handleEdit = async () => {
-    if (!editName.trim() || !editId) return
-    await updateCodebook.mutateAsync({ id: editId, name: editName.trim() })
-    setEditOpen(false)
-  }
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Jeste li sigurni da želite obrisati ovu stavku?")) return
-    await deleteCodebook.mutateAsync(id)
-  }
-
-  const openEdit = (id: string, name: string) => {
-    setEditId(id)
-    setEditName(name)
-    setEditOpen(true)
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <PlusIcon className="mr-1 h-4 w-4" />
-          Dodaj
-        </Button>
-      </div>
-
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Naziv</TableHead>
-              <TableHead className="w-[100px]" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isPending ? (
-              <TableRow>
-                <TableCell colSpan={2} className="text-center py-8">
-                  <div className="h-6 w-6 mx-auto animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                </TableCell>
-              </TableRow>
-            ) : !items?.length ? (
-              <TableRow>
-                <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
-                  Nema stavki
-                </TableCell>
-              </TableRow>
-            ) : (
-              items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1 justify-end">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(item.id!, item.name!)}
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(item.id!)}
-                        className="text-destructive"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Add Dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Dodaj stavku</DialogTitle>
-          </DialogHeader>
-          <Input
-            placeholder="Naziv"
-            value={addName}
-            onChange={(e) => setAddName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Odustani</Button>
-            <Button onClick={handleAdd} disabled={createCodebook.isPending || !addName.trim()}>
-              {createCodebook.isPending ? "Spremam..." : "Spremi"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Uredi stavku</DialogTitle>
-          </DialogHeader>
-          <Input
-            placeholder="Naziv"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleEdit()}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Odustani</Button>
-            <Button onClick={handleEdit} disabled={updateCodebook.isPending || !editName.trim()}>
-              {updateCodebook.isPending ? "Spremam..." : "Spremi"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  )
-}
+const labels: Record<CodebookType, string> = { country: "Države", city: "Gradovi", municipality_settlement: "Naselja Općine", high_school: "Srednje škole", university: "Sveučilišta", faculty: "Fakulteti", study_program: "Studijski programi", study_level: "Razine studija", scholarship_type: "Vrste stipendija", scholarship_provider: "Davatelji stipendija" };
 
 export default function CodebooksPage() {
-  return (
-    <div className="space-y-4">
-      <Tabs defaultValue="faculty">
-        <TabsList>
-          {codebookTabs.map((tab) => (
-            <TabsTrigger key={tab.type} value={tab.type}>
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {codebookTabs.map((tab) => (
-          <TabsContent key={tab.type} value={tab.type}>
-            <CodebookTab type={tab.type} />
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
-  )
+  const [type, setType] = useState<CodebookType>("city"); const { data = [], isPending } = useCodebooks(type, true);
+  const create = useCreateCodebook(); const update = useUpdateCodebook(); const remove = useDeleteCodebook();
+  const [dialog, setDialog] = useState<{ id?: string; name: string } | null>(null);
+  const save = async () => { if (!dialog?.name.trim()) return; if (dialog.id) await update.mutateAsync({ id: dialog.id, name: dialog.name.trim() }); else await create.mutateAsync({ type, name: dialog.name.trim() }); setDialog(null); };
+  return <div className="space-y-5"><div><h1 className="text-2xl font-semibold tracking-tight">Šifrarnici</h1><p className="mt-1 text-sm text-muted-foreground">Ujednačene vrijednosti za kvalitetno filtriranje i analizu. Ručni unosi studenata prikazani su kao prijedlozi.</p></div><Card><CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><CardTitle>{labels[type]}</CardTitle><p className="mt-1 text-sm text-muted-foreground">{data.filter((item) => !item.isOfficial).length} prijedloga čeka provjeru</p></div><div className="flex gap-2"><Select value={type} onValueChange={(value) => setType(value as CodebookType)}><SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger><SelectContent>{codebookTypes.map((value) => <SelectItem key={value} value={value}>{labels[value]}</SelectItem>)}</SelectContent></Select><Button onClick={() => setDialog({ name: "" })}><PlusIcon />Dodaj</Button></div></CardHeader><CardContent><div className="overflow-hidden rounded-lg border"><Table><TableHeader><TableRow><TableHead>Naziv</TableHead><TableHead>Status</TableHead><TableHead className="w-36" /></TableRow></TableHeader><TableBody>{isPending ? <TableRow><TableCell colSpan={3} className="py-10 text-center">Učitavanje...</TableCell></TableRow> : !data.length ? <TableRow><TableCell colSpan={3} className="py-10 text-center text-muted-foreground">Nema stavki.</TableCell></TableRow> : data.map((item) => <TableRow key={item.id}><TableCell className="font-medium">{item.name}</TableCell><TableCell>{item.isOfficial ? <Badge variant="secondary">Službena stavka</Badge> : <Badge variant="outline" className="border-amber-300 text-amber-800">Prijedlog korisnika</Badge>}</TableCell><TableCell><div className="flex justify-end gap-1">{!item.isOfficial && <Button variant="ghost" size="icon" title="Odobri" onClick={() => update.mutate({ id: item.id, isOfficial: true })}><CheckIcon /></Button>}<Button variant="ghost" size="icon" title="Uredi" onClick={() => setDialog({ id: item.id, name: item.name })}><PencilIcon /></Button><Button variant="ghost" size="icon" className="text-destructive" title="Ukloni" onClick={() => { if (confirm("Ukloniti stavku šifrarnika?")) remove.mutate(item.id); }}><Trash2Icon /></Button></div></TableCell></TableRow>)}</TableBody></Table></div></CardContent></Card>
+    <Dialog open={Boolean(dialog)} onOpenChange={(open) => !open && setDialog(null)}><DialogContent><DialogHeader><DialogTitle>{dialog?.id ? "Uredi stavku" : "Dodaj službenu stavku"}</DialogTitle></DialogHeader><Input autoFocus value={dialog?.name ?? ""} onChange={(event) => setDialog((current) => current ? { ...current, name: event.target.value } : null)} onKeyDown={(event) => event.key === "Enter" && save()} /><DialogFooter><Button variant="outline" onClick={() => setDialog(null)}>Odustani</Button><Button onClick={save}>Spremi</Button></DialogFooter></DialogContent></Dialog>
+  </div>;
 }

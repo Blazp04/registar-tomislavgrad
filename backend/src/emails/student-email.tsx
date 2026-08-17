@@ -5,10 +5,10 @@ import {
   Heading,
   Hr,
   Html,
-  Img,
   Preview,
   Section,
   Text,
+  Button,
 } from "@react-email/components";
 import * as React from "react";
 
@@ -17,12 +17,14 @@ interface StudentEmailProps {
   lastName: string;
   messageBody: string;
   subject: string;
+  actionLabel?: string;
+  actionUrl?: string;
 }
 
 const PRIMARY_COLOR = "#c0392b";
 const DARK_BG = "#2c3e50";
 
-export function StudentEmail({ firstName, lastName, messageBody, subject }: StudentEmailProps) {
+export function StudentEmail({ firstName, lastName, messageBody, subject, actionLabel, actionUrl }: StudentEmailProps) {
   return (
     <Html>
       <Head />
@@ -31,13 +33,6 @@ export function StudentEmail({ firstName, lastName, messageBody, subject }: Stud
         <Container style={container}>
           {/* Header */}
           <Section style={header}>
-            <Img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Grb_Tomislavgrada.svg/1200px-Grb_Tomislavgrada.svg.png"
-              width="60"
-              height="60"
-              alt="Grb Tomislavgrad"
-              style={logo}
-            />
             <Heading style={headerTitle}>Općina Tomislavgrad</Heading>
             <Text style={headerSubtitle}>Registar studenata</Text>
           </Section>
@@ -49,6 +44,9 @@ export function StudentEmail({ firstName, lastName, messageBody, subject }: Stud
             </Heading>
 
             <Text style={messageText}>{messageBody}</Text>
+            {actionLabel && actionUrl && (
+              <Button href={actionUrl} style={actionButton}>{actionLabel}</Button>
+            )}
           </Section>
 
           <Hr style={divider} />
@@ -93,11 +91,6 @@ const header: React.CSSProperties = {
   textAlign: "center" as const,
 };
 
-const logo: React.CSSProperties = {
-  margin: "0 auto 12px",
-  borderRadius: "8px",
-};
-
 const headerTitle: React.CSSProperties = {
   color: "#ffffff",
   fontSize: "22px",
@@ -130,6 +123,18 @@ const messageText: React.CSSProperties = {
   lineHeight: "1.7",
   margin: "0",
   whiteSpace: "pre-wrap" as const,
+};
+
+const actionButton: React.CSSProperties = {
+  backgroundColor: PRIMARY_COLOR,
+  borderRadius: "8px",
+  color: "#ffffff",
+  display: "inline-block",
+  fontSize: "14px",
+  fontWeight: "600",
+  marginTop: "24px",
+  padding: "12px 20px",
+  textDecoration: "none",
 };
 
 const divider: React.CSSProperties = {

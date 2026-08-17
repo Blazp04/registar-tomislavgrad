@@ -1,292 +1,66 @@
-import { useState } from "react"
-import { useParams, Link } from "react-router"
-import { useStudent } from "@/services/students"
-import { useStudentNotifications, type NotificationItem } from "@/services/notifications"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { ArrowLeftIcon, MailIcon, MessageSquareIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
+import { useState } from "react";
+import { ArrowLeftIcon, CheckCircle2Icon, PencilIcon, PlusIcon, PowerIcon, Trash2Icon } from "lucide-react";
+import { Link, useParams } from "react-router";
+import { CodebookSelect } from "@/components/codebook-select";
+import { useAdminDeleteEducation, useAdminStudent, useAdminSaveEducation, useAdminUpdateProfile, useAuditLogs, useDeleteScholarship, useSaveScholarship, useUpdateAccountStatus, useVerifyStudent, type ScholarshipInput } from "@/services/admin";
+import type { Education, EducationInput, Scholarship } from "@/services/registry";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 
-const highSchoolTypeLabels: Record<string, string> = {
-  gimnazija: "Gimnazija",
-  strukovna: "Strukovna",
+const statusLabels: Record<string, string> = { active: "Aktivan", paused: "Mirovanje", completed: "Završen", withdrawn: "Prekinut", recorded: "Evidentirana", suspended: "Obustavljena", rejected: "Odbijena" };
+const educationInput = (item: Education): EducationInput => ({ type: item.type, countryId: item.countryId, cityId: item.cityId, highSchoolId: item.highSchoolId, highSchoolProgram: item.highSchoolProgram, graduationYear: item.graduationYear, universityId: item.universityId, facultyId: item.facultyId, studyProgramId: item.studyProgramId, studyLevelId: item.studyLevelId, studyMode: item.studyMode, firstEnrollmentYear: item.firstEnrollmentYear, currentStudyYear: item.currentStudyYear, expectedGraduationYear: item.expectedGraduationYear, studyStatus: item.studyStatus, isCurrent: item.isCurrent });
+
+function ProfileAdminForm({ profileId, profile }: { profileId: string; profile: NonNullable<ReturnType<typeof useAdminStudent>["data"]>["profile"] }) {
+  const mutation = useAdminUpdateProfile(profileId);
+  const [form, setForm] = useState({ firstName: profile.firstName, lastName: profile.lastName, birthDate: profile.birthDate ?? "", address: profile.address ?? "", settlementId: profile.settlementId, phone: profile.phone ?? "" });
+  return <Card><CardHeader><CardTitle className="text-base">Osobni i kontaktni podaci</CardTitle></CardHeader><CardContent><form className="grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); mutation.mutate({ firstName: form.firstName, lastName: form.lastName, birthDate: form.birthDate || null, address: form.address || null, settlementId: form.settlementId, phone: form.phone || null }); }}><div className="space-y-2"><Label>Ime</Label><Input value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} required /></div><div className="space-y-2"><Label>Prezime</Label><Input value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} required /></div><div className="space-y-2 sm:col-span-2"><Label>E-mail</Label><Input value={profile.email} disabled /><p className="text-xs text-muted-foreground">Promjena e-maila zahtijeva zaseban potvrđeni postupak.</p></div><div className="space-y-2"><Label>Datum rođenja</Label><Input type="date" value={form.birthDate} onChange={(event) => setForm({ ...form, birthDate: event.target.value })} /></div><div className="space-y-2"><Label>Telefon</Label><Input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></div><div className="space-y-2 sm:col-span-2"><Label>Adresa</Label><Input value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} /></div><div className="sm:col-span-2"><CodebookSelect type="municipality_settlement" label="Naselje prebivališta" value={form.settlementId} onChange={(settlementId) => setForm({ ...form, settlementId })} /></div><div className="sm:col-span-2"><Button disabled={mutation.isPending}><PencilIcon />Spremi izmjene</Button></div></form></CardContent></Card>;
 }
 
-const highSchoolDurationLabels: Record<string, string> = {
-  trogodisnja: "3-godišnja",
-  cetverogodisnja: "4-godišnja",
-  petogodisnja: "5-godišnja",
+function EducationAdminEditor({ profileId, item, close }: { profileId: string; item: Education; close: () => void }) {
+  const mutation = useAdminSaveEducation(profileId);
+  const [form, setForm] = useState<EducationInput>(educationInput(item));
+  const num = (value: string) => value ? Number(value) : null;
+  return <form className="mt-4 space-y-4 rounded-xl border bg-slate-50 p-4" onSubmit={async (event) => { event.preventDefault(); await mutation.mutateAsync({ id: item.id, data: form }); close(); }}>
+    {item.type === "high_school" ? <><div className="grid gap-4 sm:grid-cols-2"><CodebookSelect type="high_school" label="Srednja škola" value={form.highSchoolId} onChange={(highSchoolId) => setForm({ ...form, highSchoolId })} required /><CodebookSelect type="city" label="Mjesto škole" value={form.cityId} onChange={(cityId) => setForm({ ...form, cityId })} required /></div><div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Smjer ili zanimanje</Label><Input value={form.highSchoolProgram ?? ""} onChange={(event) => setForm({ ...form, highSchoolProgram: event.target.value })} /></div><div className="space-y-2"><Label>Godina završetka</Label><Input type="number" value={form.graduationYear ?? ""} onChange={(event) => setForm({ ...form, graduationYear: num(event.target.value) })} /></div></div></> : <><div className="grid gap-4 sm:grid-cols-2"><CodebookSelect type="country" label="Država" value={form.countryId} onChange={(countryId) => setForm({ ...form, countryId })} required /><CodebookSelect type="city" label="Grad" value={form.cityId} onChange={(cityId) => setForm({ ...form, cityId })} required /><CodebookSelect type="university" label="Sveučilište" value={form.universityId} onChange={(universityId) => setForm({ ...form, universityId })} required /><CodebookSelect type="faculty" label="Fakultet" value={form.facultyId} onChange={(facultyId) => setForm({ ...form, facultyId })} required /><CodebookSelect type="study_program" label="Studijski program" value={form.studyProgramId} onChange={(studyProgramId) => setForm({ ...form, studyProgramId })} required /><CodebookSelect type="study_level" label="Razina studija" value={form.studyLevelId} onChange={(studyLevelId) => setForm({ ...form, studyLevelId })} required /></div><div className="grid gap-4 sm:grid-cols-3"><div className="space-y-2"><Label>Prvi upis</Label><Input type="number" value={form.firstEnrollmentYear ?? ""} onChange={(event) => setForm({ ...form, firstEnrollmentYear: num(event.target.value) })} /></div><div className="space-y-2"><Label>Trenutačna godina</Label><Input type="number" value={form.currentStudyYear ?? ""} onChange={(event) => setForm({ ...form, currentStudyYear: num(event.target.value) })} /></div><div className="space-y-2"><Label>Očekivani završetak</Label><Input type="number" value={form.expectedGraduationYear ?? ""} onChange={(event) => setForm({ ...form, expectedGraduationYear: num(event.target.value) })} /></div></div><div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Status</Label><Select value={form.studyStatus ?? "active"} onValueChange={(studyStatus) => setForm({ ...form, studyStatus: studyStatus as EducationInput["studyStatus"] })}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Aktivan</SelectItem><SelectItem value="paused">Mirovanje</SelectItem><SelectItem value="completed">Završen</SelectItem><SelectItem value="withdrawn">Prekinut</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Način studiranja</Label><Select value={form.studyMode ?? "full_time"} onValueChange={(studyMode) => setForm({ ...form, studyMode: studyMode as EducationInput["studyMode"] })}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="full_time">Redovito</SelectItem><SelectItem value="part_time">Izvanredno</SelectItem><SelectItem value="distance">Na daljinu</SelectItem><SelectItem value="other">Drugo</SelectItem></SelectContent></Select></div></div></>}
+    <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={close}>Odustani</Button><Button disabled={mutation.isPending}>Spremi</Button></div>
+  </form>;
 }
 
-function formatDate(dateStr: string | undefined | null) {
-  if (!dateStr) return "—"
-  return new Date(dateStr).toLocaleDateString("hr-HR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+function EducationAdmin({ profileId, items }: { profileId: string; items: Education[] }) {
+  const remove = useAdminDeleteEducation(profileId);
+  const [editing, setEditing] = useState<string | null>(null);
+  return <div className="space-y-4">{items.map((item) => <Card key={item.id}><CardContent className="p-5"><div className="flex flex-col gap-4 sm:flex-row sm:items-center"><div className="flex-1"><div className="flex items-center gap-2"><p className="font-medium">{item.type === "high_school" ? item.highSchoolName : item.studyProgramName}</p>{item.isCurrent && <Badge>Trenutačni</Badge>}</div><p className="mt-1 text-sm text-muted-foreground">{item.type === "high_school" ? `${item.cityName ?? "—"} · završeno ${item.graduationYear ?? "—"}` : `${item.facultyName ?? "—"} · ${item.cityName ?? "—"} · ${item.currentStudyYear ?? "—"}. godina · ${statusLabels[item.studyStatus ?? ""] ?? "—"}`}</p></div><Button size="sm" variant="outline" onClick={() => setEditing(editing === item.id ? null : item.id)}><PencilIcon />Uredi</Button><Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm("Ukloniti zapis obrazovanja?")) remove.mutate(item.id); }}><Trash2Icon /></Button></div>{editing === item.id && <EducationAdminEditor profileId={profileId} item={item} close={() => setEditing(null)} />}</CardContent></Card>)}</div>;
 }
 
-function formatDateShort(dateStr: string | undefined | null) {
-  if (!dateStr) return "—"
-  return new Date(dateStr).toLocaleDateString("hr-HR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  })
+const emptyScholarship: ScholarshipInput = { name: "", scholarshipTypeId: null, providerId: "", academicYear: "", status: "recorded", startDate: null, endDate: null, amount: null, currency: "BAM", adminNote: "" };
+const scholarshipInput = (item: Scholarship): ScholarshipInput => ({ name: item.name, scholarshipTypeId: item.scholarshipTypeId, providerId: item.providerId, academicYear: item.academicYear, status: item.status, startDate: item.startDate, endDate: item.endDate, amount: item.amount ? Number(item.amount) : null, currency: item.currency, adminNote: item.adminNote });
+
+function ScholarshipsAdmin({ profileId, items }: { profileId: string; items: Scholarship[] }) {
+  const save = useSaveScholarship(profileId); const remove = useDeleteScholarship(profileId);
+  const [editing, setEditing] = useState<string | "new" | null>(null); const current = editing && editing !== "new" ? items.find((item) => item.id === editing) : undefined;
+  const [form, setForm] = useState<ScholarshipInput>(emptyScholarship);
+  return <div className="space-y-4"><Button variant="outline" onClick={() => { setForm(emptyScholarship); setEditing("new"); }}><PlusIcon />Nova stipendija</Button>{editing && <Card><CardHeader><CardTitle className="text-base">{editing === "new" ? "Dodaj stipendiju" : "Uredi stipendiju"}</CardTitle></CardHeader><CardContent><form className="space-y-4" onSubmit={async (event) => { event.preventDefault(); await save.mutateAsync({ id: current?.id, data: form }); setEditing(null); }}><div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>Naziv (ako nije odabrana vrsta)</Label><Input value={form.name ?? ""} onChange={(event) => setForm({ ...form, name: event.target.value })} /></div><CodebookSelect type="scholarship_type" label="Vrsta stipendije" value={form.scholarshipTypeId ?? null} onChange={(scholarshipTypeId) => setForm({ ...form, scholarshipTypeId })} /><CodebookSelect type="scholarship_provider" label="Davatelj stipendije" value={form.providerId || null} onChange={(providerId) => setForm({ ...form, providerId: providerId ?? "" })} required /><div className="space-y-2"><Label>Akademska godina *</Label><Input placeholder="2026/2027" value={form.academicYear} onChange={(event) => setForm({ ...form, academicYear: event.target.value })} required /></div><div className="space-y-2"><Label>Status</Label><Select value={form.status} onValueChange={(status) => setForm({ ...form, status: status as ScholarshipInput["status"] })}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="recorded">Evidentirana</SelectItem><SelectItem value="active">Aktivna</SelectItem><SelectItem value="completed">Završena</SelectItem><SelectItem value="suspended">Obustavljena</SelectItem><SelectItem value="rejected">Odbijena</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>Iznos (BAM, neobavezno)</Label><Input type="number" min="0" step="0.01" value={form.amount ?? ""} onChange={(event) => setForm({ ...form, amount: event.target.value ? Number(event.target.value) : null })} /></div><div className="space-y-2"><Label>Datum početka</Label><Input type="date" value={form.startDate ?? ""} onChange={(event) => setForm({ ...form, startDate: event.target.value || null })} /></div><div className="space-y-2"><Label>Datum završetka</Label><Input type="date" value={form.endDate ?? ""} onChange={(event) => setForm({ ...form, endDate: event.target.value || null })} /></div></div><div className="space-y-2"><Label>Napomena administratora</Label><Textarea value={form.adminNote ?? ""} onChange={(event) => setForm({ ...form, adminNote: event.target.value })} /></div><div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => setEditing(null)}>Odustani</Button><Button disabled={save.isPending}>Spremi stipendiju</Button></div></form></CardContent></Card>}
+    {items.map((item) => <Card key={item.id}><CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center"><div className="flex-1"><div className="flex items-center gap-2"><p className="font-medium">{item.name ?? item.scholarshipTypeName}</p><Badge variant="secondary">{statusLabels[item.status] ?? item.status}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{item.providerName} · {item.academicYear}{item.amount ? ` · ${Number(item.amount).toLocaleString("hr-HR")} ${item.currency}` : ""}</p></div><Button size="sm" variant="outline" onClick={() => { setForm(scholarshipInput(item)); setEditing(item.id); }}><PencilIcon />Uredi</Button><Button size="icon" variant="ghost" className="text-destructive" onClick={() => { if (confirm("Ukloniti stipendiju?")) remove.mutate(item.id); }}><Trash2Icon /></Button></CardContent></Card>)}</div>;
 }
 
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
-      <span className="text-sm font-medium text-muted-foreground min-w-[160px]">{label}</span>
-      <span className="text-sm">{value ?? "—"}</span>
-    </div>
-  )
-}
-
-function NotificationHistory({ studentId }: { studentId: string }) {
-  const [page, setPage] = useState(1)
-  const { data, isPending } = useStudentNotifications(studentId, page, 20)
-
-  const items = data?.items ?? []
-  const meta = data?.meta
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[80px]">Tip</TableHead>
-              <TableHead className="w-[160px]">Datum</TableHead>
-              <TableHead className="w-[150px]">Pošiljatelj</TableHead>
-              <TableHead>Naslov / Sadržaj</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isPending ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
-                  <div className="h-6 w-6 mx-auto animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                </TableCell>
-              </TableRow>
-            ) : items.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                  Nema poslanih obavijesti
-                </TableCell>
-              </TableRow>
-            ) : (
-              items.map((n: NotificationItem) => (
-                <TableRow key={n.id}>
-                  <TableCell>
-                    {n.type === "email" ? (
-                      <Badge variant="secondary" className="gap-1">
-                        <MailIcon className="h-3 w-3" />
-                        Email
-                      </Badge>
-                    ) : (
-                      <Badge className="gap-1 bg-green-600 hover:bg-green-700">
-                        <MessageSquareIcon className="h-3 w-3" />
-                        SMS
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">{formatDate(n.sentAt)}</TableCell>
-                  <TableCell className="text-sm">{n.senderName ?? "Sustav"}</TableCell>
-                  <TableCell className="max-w-[400px]">
-                    {n.subject && (
-                      <p className="text-sm font-medium truncate">{n.subject}</p>
-                    )}
-                    <p className="text-sm text-muted-foreground truncate">{n.content}</p>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {meta && meta.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Ukupno: {meta.total} obavijesti — Stranica {meta.page} od {meta.totalPages}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!meta.hasPreviousPage}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              <ChevronLeftIcon className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!meta.hasNextPage}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRightIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
+function StudentHistory({ userId }: { userId: string }) {
+  const { data, isPending } = useAuditLogs(1, userId);
+  return <Card><CardHeader><CardTitle className="text-base">Povijest administratorskih promjena</CardTitle></CardHeader><CardContent className="space-y-3">{isPending ? <p className="text-sm text-muted-foreground">Učitavanje...</p> : !data?.items.length ? <p className="text-sm text-muted-foreground">Još nema administratorskih promjena.</p> : data.items.map((item) => <div key={item.id} className="flex flex-col gap-2 rounded-lg border p-3 text-sm sm:flex-row sm:items-center"><div className="flex-1"><p className="font-medium">{item.action}</p><p className="text-muted-foreground">{item.actorName ?? "Sustav"} · {item.entityType}</p></div><time className="whitespace-nowrap text-xs text-muted-foreground">{new Date(item.createdAt).toLocaleString("hr-HR")}</time></div>)}</CardContent></Card>;
 }
 
 export default function StudentDetailPage() {
-  const { id } = useParams<{ id: string }>()
-  const { data: student, isPending } = useStudent(id!)
-
-  if (isPending) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    )
-  }
-
-  if (!student) {
-    return (
-      <div className="space-y-4">
-        <Link to="/admin/students">
-          <Button variant="ghost" size="sm">
-            <ArrowLeftIcon className="mr-1 h-4 w-4" />
-            Natrag na popis
-          </Button>
-        </Link>
-        <p className="text-center text-muted-foreground py-8">Student nije pronađen</p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link to="/admin/students">
-          <Button variant="ghost" size="icon">
-            <ArrowLeftIcon className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold">{student.firstName} {student.lastName}</h1>
-          <p className="text-sm text-muted-foreground">
-            Upisano: {formatDateShort(student.createdAt)}
-          </p>
-        </div>
-        <div className="ml-auto flex gap-2">
-          <Badge variant={student.isCurrentStudent ? "default" : "secondary"}>
-            {student.isCurrentStudent ? "Trenutni student" : "Bivši student"}
-          </Badge>
-          {student.isEmployed ? (
-            <Badge className="bg-green-600 hover:bg-green-700">
-              {student.isWorkingInField ? "Zaposlen u struci" : "Zaposlen"}
-            </Badge>
-          ) : (
-            <Badge variant="outline">Nezaposlen</Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="details">
-        <TabsList>
-          <TabsTrigger value="details">Detalji</TabsTrigger>
-          <TabsTrigger value="notifications">Povijest obavijesti</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="details" className="space-y-4 mt-4">
-          {/* Personal info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Osobni podaci</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoRow label="Ime" value={student.firstName} />
-              <InfoRow label="Prezime" value={student.lastName} />
-              <InfoRow label="Ime oca" value={student.fatherName} />
-              <InfoRow label="Email" value={student.email} />
-              <InfoRow label="Adresa" value={student.address} />
-              <InfoRow label="Telefon" value={student.phone} />
-            </CardContent>
-          </Card>
-
-          {/* High school */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Srednja škola</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoRow label="Tip" value={highSchoolTypeLabels[student.highSchoolType ?? ""] ?? student.highSchoolType} />
-              <InfoRow label="Trajanje" value={highSchoolDurationLabels[student.highSchoolDuration ?? ""] ?? student.highSchoolDuration} />
-              <InfoRow label="Zanimanje" value={student.highSchoolProfessionName ?? "—"} />
-              <InfoRow label="Grad" value={student.highSchoolCityName} />
-            </CardContent>
-          </Card>
-
-          {/* Faculty */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Fakultet</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoRow label="Naziv" value={student.facultyName} />
-              <InfoRow label="Smjer" value={student.fieldOfStudyName} />
-              <InfoRow label="Grad" value={student.facultyCityName} />
-            </CardContent>
-          </Card>
-
-          {/* Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Status</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <InfoRow
-                label="Status studenta"
-                value={
-                  <Badge variant={student.isCurrentStudent ? "default" : "secondary"}>
-                    {student.isCurrentStudent ? "Trenutni student" : "Bivši student"}
-                  </Badge>
-                }
-              />
-              <InfoRow
-                label="Zaposlenost"
-                value={
-                  student.isEmployed ? (
-                    <Badge className="bg-green-600 hover:bg-green-700">
-                      {student.isWorkingInField ? "Zaposlen u struci" : "Zaposlen"}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">Nezaposlen</Badge>
-                  )
-                }
-              />
-              <InfoRow label="Datum upisa" value={formatDate(student.createdAt)} />
-              <InfoRow label="Zadnja izmjena" value={formatDate(student.updatedAt)} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="mt-4">
-          <NotificationHistory studentId={id!} />
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+  const { id = "" } = useParams(); const { data, isPending } = useAdminStudent(id); const verify = useVerifyStudent(id); const account = useUpdateAccountStatus(id);
+  const academicYear = (() => { const now = new Date(); const first = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1; return `${first}/${first + 1}`; })();
+  if (isPending) return <div className="grid min-h-[50vh] place-items-center">Učitavanje...</div>;
+  if (!data) return <p>Student nije pronađen.</p>;
+  return <div className="space-y-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-center"><Button asChild variant="ghost" size="icon"><Link to="/admin/students"><ArrowLeftIcon /></Link></Button><div className="flex-1"><h1 className="text-2xl font-semibold">{data.profile.firstName} {data.profile.lastName}</h1><p className="text-sm text-muted-foreground">{data.profile.email} · ažurirano {new Date(data.profile.updatedAt).toLocaleDateString("hr-HR")}</p></div><Badge variant={data.profile.isActive ? "default" : "destructive"}>{data.profile.isActive ? "Aktivan račun" : "Deaktiviran račun"}</Badge><Button variant="outline" onClick={() => account.mutate(!data.profile.isActive)}><PowerIcon />{data.profile.isActive ? "Deaktiviraj" : "Aktiviraj"}</Button><Button disabled={verify.isPending} onClick={() => verify.mutate(academicYear)}><CheckCircle2Icon />Potvrdi {academicYear}</Button></div>
+    <div className="grid gap-3 sm:grid-cols-3"><Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Dovršenost</p><p className="mt-1 text-2xl font-semibold">{data.profile.completionPercentage}%</p></CardContent></Card><Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Potvrđena godina</p><p className="mt-1 text-lg font-semibold">{data.profile.verifiedAcademicYear ?? "Nije potvrđen"}</p></CardContent></Card><Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Stipendije</p><p className="mt-1 text-2xl font-semibold">{data.scholarships.length}</p></CardContent></Card></div>
+    <Tabs defaultValue="profile"><TabsList className="max-w-full overflow-x-auto"><TabsTrigger value="profile">Profil</TabsTrigger><TabsTrigger value="education">Obrazovanje</TabsTrigger><TabsTrigger value="scholarships">Stipendije</TabsTrigger><TabsTrigger value="privacy">Privole i zahtjevi</TabsTrigger><TabsTrigger value="history">Povijest</TabsTrigger></TabsList><TabsContent value="profile" className="mt-4"><ProfileAdminForm profileId={id} profile={data.profile} /></TabsContent><TabsContent value="education" className="mt-4"><EducationAdmin profileId={id} items={data.educations} /></TabsContent><TabsContent value="scholarships" className="mt-4"><ScholarshipsAdmin profileId={id} items={data.scholarships} /></TabsContent><TabsContent value="privacy" className="mt-4 space-y-4"><Card><CardHeader><CardTitle className="text-base">Privole</CardTitle></CardHeader><CardContent className="space-y-3">{data.consents.map((item) => <div key={item.id} className="flex justify-between rounded-lg border p-3 text-sm"><span>{item.type} · verzija {item.version}</span><Badge variant={item.accepted && !item.withdrawnAt ? "default" : "secondary"}>{item.accepted && !item.withdrawnAt ? "Prihvaćeno" : "Povučeno"}</Badge></div>)}</CardContent></Card><Card><CardHeader><CardTitle className="text-base">Zahtjevi korisnika</CardTitle></CardHeader><CardContent className="space-y-3">{data.dataRequests.length ? data.dataRequests.map((item) => <div key={item.id} className="rounded-lg border p-3 text-sm"><div className="flex justify-between"><span className="font-medium">{item.type}</span><Badge variant="secondary">{item.status}</Badge></div>{item.details && <p className="mt-2 text-muted-foreground">{item.details}</p>}</div>) : <p className="text-sm text-muted-foreground">Nema zahtjeva.</p>}</CardContent></Card></TabsContent><TabsContent value="history" className="mt-4"><StudentHistory userId={data.profile.userId} /></TabsContent></Tabs>
+  </div>;
 }

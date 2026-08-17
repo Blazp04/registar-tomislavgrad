@@ -1,0 +1,11 @@
+import { useState } from "react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useAuditLogs } from "@/services/admin";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+export default function AuditLogsPage() {
+  const [page, setPage] = useState(1); const { data, isPending } = useAuditLogs(page);
+  return <div className="space-y-5"><div><h1 className="text-2xl font-semibold tracking-tight">Audit zapisi</h1><p className="mt-1 text-sm text-muted-foreground">Važne administratorske promjene radi sljedivosti i sigurnosti.</p></div><div className="overflow-hidden rounded-xl border bg-card"><div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Vrijeme</TableHead><TableHead>Administrator</TableHead><TableHead>Radnja</TableHead><TableHead>Entitet</TableHead><TableHead>ID</TableHead></TableRow></TableHeader><TableBody>{isPending ? <TableRow><TableCell colSpan={5} className="py-10 text-center">Učitavanje...</TableCell></TableRow> : !data?.items.length ? <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground">Još nema audit zapisa.</TableCell></TableRow> : data.items.map((item) => <TableRow key={item.id}><TableCell className="whitespace-nowrap text-sm">{new Date(item.createdAt).toLocaleString("hr-HR")}</TableCell><TableCell>{item.actorName ?? "Sustav"}</TableCell><TableCell><Badge variant="secondary">{item.action}</Badge></TableCell><TableCell>{item.entityType}</TableCell><TableCell className="max-w-48 truncate font-mono text-xs">{item.entityId ?? "—"}</TableCell></TableRow>)}</TableBody></Table></div>{data?.meta && <div className="flex items-center justify-between border-t px-4 py-3 text-sm"><span className="text-muted-foreground">Ukupno {data.meta.total}</span><div className="flex gap-2"><Button size="sm" variant="outline" disabled={!data.meta.hasPreviousPage} onClick={() => setPage((value) => value - 1)}><ChevronLeftIcon /></Button><Button size="sm" variant="outline" disabled={!data.meta.hasNextPage} onClick={() => setPage((value) => value + 1)}><ChevronRightIcon /></Button></div></div>}</div></div>;
+}

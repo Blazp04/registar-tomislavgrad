@@ -57,7 +57,7 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
+    --primary: oklch(0.48 0.17 27);
     --primary-foreground: oklch(0.985 0 0);
     --secondary: oklch(0.97 0 0);
     --secondary-foreground: oklch(0.205 0 0);
@@ -124,9 +124,18 @@
     @apply border-border outline-ring/50;
     }
   body {
-    @apply bg-background text-foreground;
+    @apply min-h-svh bg-background text-foreground antialiased;
     }
   html {
-    @apply font-sans;
+    @apply scroll-smooth font-sans;
     }
+}
+
+@layer components {
+  .prose-registry h2 {
+    @apply mb-2 text-xl font-semibold tracking-tight text-slate-950;
+  }
+  .prose-registry a {
+    @apply text-primary underline underline-offset-4;
+  }
 }

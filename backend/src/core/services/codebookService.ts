@@ -1,46 +1,45 @@
+import type { CreateCodebookDTO, UpdateCodebookDTO } from "../../dto/codebook.js";
+import type { CodebookType } from "../database/codebook-schema.js";
 import { codebookRepository } from "../repositories/codebookRepository.js";
 import { ConflictError, NotFoundError } from "../utils/errors.js";
-import type { CreateCodebookDTO, UpdateCodebookDTO } from "../../dto/codebook.js";
+import { auditService } from "./auditService.js";
 
 export const codebookService = {
-  async getById(id: string) {
-    const item = await codebookRepository.findById(id);
-    if (!item) throw new NotFoundError("Stavka šifrarnika nije pronađena");
+  getAllByType(type: CodebookType, includeUnofficial = false) {
+    return codebookRepository.findAllByType(type, includeUnofficial);
+  },
+
+  async create(data: CreateCodebookDTO, userId?: string, ipAddress?: string | null) {
+    const existing = await codebookRepository.findByTypeAndName(data.type, data.name);
+    if (existing) throw new ConflictError("Stavka s tim nazivom već postoji");
+    const item = await codebookRepository.create({ ...data, createdBy: userId });
+    await auditService.record({ actorId: userId, action: "codebook.create", entityType: "codebook", entityId: item.id, after: item, ipAddress });
     return item;
   },
 
-  async getAllByType(type: "faculty" | "field_of_study" | "high_school_profession" | "city") {
-    return codebookRepository.findAllByType(type);
-  },
-
-  async create(data: CreateCodebookDTO, userId?: string) {
-    const existing = await codebookRepository.findByTypeAndName(data.type, data.name);
-    if (existing) throw new ConflictError("Stavka s tim imenom već postoji u šifrarniku");
-    return codebookRepository.create({ ...data, createdBy: userId });
-  },
-
-  async findOrCreate(type: "faculty" | "field_of_study" | "high_school_profession" | "city", name: string, userId?: string) {
+  async suggest(type: CodebookType, name: string, userId: string) {
     const existing = await codebookRepository.findByTypeAndName(type, name);
     if (existing) return existing;
-    return codebookRepository.create({ type, name, createdBy: userId });
+    return codebookRepository.create({ type, name, isOfficial: false, createdBy: userId });
   },
 
-  async update(id: string, data: UpdateCodebookDTO, userId?: string) {
+  async update(id: string, data: UpdateCodebookDTO, userId?: string, ipAddress?: string | null) {
     const item = await codebookRepository.findById(id);
     if (!item) throw new NotFoundError("Stavka šifrarnika nije pronađena");
-
-    // Check for duplicate name within the same type
     if (data.name && data.name !== item.name) {
-      const existing = await codebookRepository.findByTypeAndName(item.type, data.name);
-      if (existing) throw new ConflictError("Stavka s tim imenom već postoji u šifrarniku");
+      const duplicate = await codebookRepository.findByTypeAndName(item.type, data.name);
+      if (duplicate) throw new ConflictError("Stavka s tim nazivom već postoji");
     }
-
-    return codebookRepository.update(id, { name: data.name, updatedBy: userId });
+    const updated = await codebookRepository.update(id, { ...data, updatedBy: userId });
+    await auditService.record({ actorId: userId, action: "codebook.update", entityType: "codebook", entityId: id, before: item, after: updated, ipAddress });
+    return updated;
   },
 
-  async remove(id: string, userId?: string) {
+  async remove(id: string, userId?: string, ipAddress?: string | null) {
     const item = await codebookRepository.findById(id);
     if (!item) throw new NotFoundError("Stavka šifrarnika nije pronađena");
-    return codebookRepository.softDelete(id, userId);
+    const deleted = await codebookRepository.softDelete(id, userId);
+    await auditService.record({ actorId: userId, action: "codebook.delete", entityType: "codebook", entityId: id, before: item, ipAddress });
+    return deleted;
   },
 };

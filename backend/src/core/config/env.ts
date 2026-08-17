@@ -15,6 +15,7 @@ const envSchema = z.object({
     .string()
     .min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
   BETTER_AUTH_URL: z.string().url(),
+  PUBLIC_APP_URL: z.string().url().default("http://localhost:5173"),
 
   // Email (optional — disabled if not set)
   SMTP_HOST: z.string().optional(),

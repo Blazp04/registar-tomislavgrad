@@ -1,213 +1,269 @@
+import type {
+  ConsentDTO,
+  DataRequestDTO,
+  DataRequestResolutionDTO,
+  EducationDTO,
+  ScholarshipDTO,
+  StudentQueryDTO,
+  UpdateProfileDTO,
+} from "../../dto/student.js";
 import { studentRepository } from "../repositories/studentRepository.js";
-import { codebookService } from "./codebookService.js";
-import { notificationService } from "./notificationService.js";
-import { NotFoundError } from "../utils/errors.js";
-import type { CreateStudentDTO, UpdateStudentDTO, StudentQueryDTO, SendSmsDTO, SendEmailDTO } from "../../dto/student.js";
-import { sendEmail } from "../../lib/email.js";
+import { BadRequestError, NotFoundError } from "../utils/errors.js";
+import { calculateProfileCompletion, getCurrentAcademicYear } from "../utils/profileCompletion.js";
+import { auditService } from "./auditService.js";
+
+async function getProfileOrThrowByUser(userId: string) {
+  const profile = await studentRepository.ensureProfile(userId);
+  if (!profile) throw new NotFoundError("Profil nije pronađen");
+  return profile;
+}
+
+async function getProfileOrThrowById(profileId: string) {
+  const record = await studentRepository.findProfileById(profileId);
+  if (!record) throw new NotFoundError("Profil nije pronađen");
+  const profile = await studentRepository.findProfileByUserId(record.userId);
+  if (!profile) throw new NotFoundError("Profil nije pronađen");
+  return profile;
+}
+
+async function refreshCompletion(userId: string) {
+  const profile = await getProfileOrThrowByUser(userId);
+  const educations = await studentRepository.listEducations(profile.id);
+  const completion = calculateProfileCompletion({
+    user: profile,
+    profile,
+    educations,
+  });
+  await studentRepository.updateCompletion(profile.id, completion);
+  return completion;
+}
+
+const csvCell = (value: unknown) => {
+  const text = value === null || value === undefined ? "" : String(value);
+  return `"${text.replaceAll('"', '""')}"`;
+};
 
 export const studentService = {
-  async getById(id: string) {
-    const result = await studentRepository.findByIdWithCodebooks(id);
-    if (!result) throw new NotFoundError("Student nije pronađen");
-    return result;
+  async getOwnBundle(userId: string) {
+    const profile = await getProfileOrThrowByUser(userId);
+    const [educations, scholarships, consents, dataRequests] = await Promise.all([
+      studentRepository.listEducations(profile.id),
+      studentRepository.listScholarships(profile.id),
+      studentRepository.listConsents(userId),
+      studentRepository.listOwnDataRequests(userId),
+    ]);
+    return { profile, educations, scholarships, consents, dataRequests, currentAcademicYear: getCurrentAcademicYear() };
   },
 
-  async getAll(filters: StudentQueryDTO) {
+  async getOwnDashboard(userId: string) {
+    const bundle = await this.getOwnBundle(userId);
+    const currentStudy = bundle.educations.find((item) => item.type === "higher_education" && item.isCurrent)
+      ?? bundle.educations.find((item) => item.type === "higher_education")
+      ?? null;
+    return {
+      greetingName: bundle.profile.firstName,
+      completionPercentage: bundle.profile.completionPercentage,
+      currentStudy,
+      verifiedAcademicYear: bundle.profile.verifiedAcademicYear,
+      currentAcademicYear: bundle.currentAcademicYear,
+      needsConfirmation: bundle.profile.verifiedAcademicYear !== bundle.currentAcademicYear,
+      scholarships: bundle.scholarships,
+      lastUpdatedAt: bundle.profile.updatedAt,
+    };
+  },
+
+  async updateOwnProfile(userId: string, data: UpdateProfileDTO) {
+    await getProfileOrThrowByUser(userId);
+    await studentRepository.updateProfile(userId, data);
+    await refreshCompletion(userId);
+    return getProfileOrThrowByUser(userId);
+  },
+
+  async createEducation(userId: string, data: EducationDTO) {
+    const profile = await getProfileOrThrowByUser(userId);
+    const item = await studentRepository.createEducation(profile.id, data);
+    await refreshCompletion(userId);
+    return item;
+  },
+
+  async updateEducation(userId: string, id: string, data: EducationDTO) {
+    const profile = await getProfileOrThrowByUser(userId);
+    const existing = await studentRepository.findEducation(id, profile.id);
+    if (!existing) throw new NotFoundError("Zapis obrazovanja nije pronađen");
+    const item = await studentRepository.updateEducation(id, profile.id, data);
+    await refreshCompletion(userId);
+    return item;
+  },
+
+  async deleteEducation(userId: string, id: string) {
+    const profile = await getProfileOrThrowByUser(userId);
+    const existing = await studentRepository.findEducation(id, profile.id);
+    if (!existing) throw new NotFoundError("Zapis obrazovanja nije pronađen");
+    const item = await studentRepository.deleteEducation(id, profile.id);
+    await refreshCompletion(userId);
+    return item;
+  },
+
+  async confirmOwnProfile(userId: string) {
+    const profile = await getProfileOrThrowByUser(userId);
+    const completion = await refreshCompletion(userId);
+    if (completion < 100) throw new BadRequestError("Profil je potrebno dovršiti prije potvrde podataka");
+    return studentRepository.verifyProfile(profile.id, getCurrentAcademicYear());
+  },
+
+  async recordConsent(userId: string, data: ConsentDTO, ipAddress?: string | null) {
+    return studentRepository.recordConsent({ userId, ...data, ipAddress: ipAddress ?? null });
+  },
+
+  async createDataRequest(userId: string, email: string, data: DataRequestDTO) {
+    return studentRepository.createDataRequest({ userId, requesterEmail: email, ...data });
+  },
+
+  async exportOwnData(userId: string) {
+    const bundle = await this.getOwnBundle(userId);
+    return {
+      exportedAt: new Date().toISOString(),
+      controller: "Općina Tomislavgrad",
+      ...bundle,
+    };
+  },
+
+  async deactivateOwnAccount(userId: string, ipAddress?: string | null) {
+    const before = await studentRepository.findProfileByUserId(userId);
+    const updated = await studentRepository.updateAccountStatus(userId, false);
+    await auditService.record({ actorId: userId, subjectUserId: userId, action: "account.deactivate", entityType: "user", entityId: userId, before, after: { isActive: false }, ipAddress });
+    return updated;
+  },
+
+  listStudents(filters: StudentQueryDTO) {
     return studentRepository.findAll(filters);
   },
 
-  async create(data: CreateStudentDTO, userId?: string) {
-    let { facultyId, fieldOfStudyId, highSchoolProfessionId, highSchoolCityId, facultyCityId } = data;
-
-    // Handle "Drugo" option for faculty
-    if (data.customFacultyName) {
-      const faculty = await codebookService.findOrCreate("faculty", data.customFacultyName, userId);
-      facultyId = faculty.id;
-    }
-
-    // Handle "Drugo" option for field of study
-    if (data.customFieldOfStudyName) {
-      const field = await codebookService.findOrCreate("field_of_study", data.customFieldOfStudyName, userId);
-      fieldOfStudyId = field.id;
-    }
-
-    // Handle "Drugo" option for high school profession
-    if (data.customHighSchoolProfessionName) {
-      const prof = await codebookService.findOrCreate("high_school_profession", data.customHighSchoolProfessionName, userId);
-      highSchoolProfessionId = prof.id;
-    }
-
-    // Handle "Drugo" option for city
-    if (data.customCityName) {
-      const city = await codebookService.findOrCreate("city", data.customCityName, userId);
-      highSchoolCityId = city.id;
-      facultyCityId = city.id;
-    }
-
-    // Gimnazija is always 4-year, no profession
-    const highSchoolType = data.highSchoolType;
-    const highSchoolDuration = highSchoolType === "gimnazija" ? "cetverogodisnja" as const : data.highSchoolDuration;
-    const resolvedProfessionId = highSchoolType === "gimnazija" ? null : (highSchoolProfessionId ?? null);
-
-    return studentRepository.create({
-      firstName: data.firstName,
-      lastName: data.lastName,
-      fatherName: data.fatherName,
-      email: data.email,
-      address: data.address,
-      phone: data.phone,
-      isCurrentStudent: data.isCurrentStudent,
-      isEmployed: data.isEmployed,
-      isWorkingInField: data.isWorkingInField,
-      highSchoolType,
-      highSchoolDuration,
-      highSchoolProfessionId: resolvedProfessionId,
-      highSchoolCityId,
-      facultyId,
-      fieldOfStudyId,
-      facultyCityId,
-      createdBy: userId,
-    });
+  async getAdminStudent(profileId: string) {
+    const profile = await getProfileOrThrowById(profileId);
+    const [educations, scholarships, consents, dataRequests] = await Promise.all([
+      studentRepository.listEducations(profile.id),
+      studentRepository.listScholarships(profile.id),
+      studentRepository.listConsents(profile.userId),
+      studentRepository.listOwnDataRequests(profile.userId),
+    ]);
+    return { profile, educations, scholarships, consents, dataRequests };
   },
 
-  async update(id: string, data: UpdateStudentDTO, userId?: string) {
-    const existing = await studentRepository.findById(id);
-    if (!existing) throw new NotFoundError("Student nije pronađen");
-
-    const updateData: Record<string, unknown> = { ...data, updatedBy: userId };
-    delete updateData.customFacultyName;
-    delete updateData.customFieldOfStudyName;
-    delete updateData.customHighSchoolProfessionName;
-    delete updateData.customCityName;
-
-    if (data.customFacultyName) {
-      const faculty = await codebookService.findOrCreate("faculty", data.customFacultyName, userId);
-      updateData.facultyId = faculty.id;
-    }
-
-    if (data.customFieldOfStudyName) {
-      const field = await codebookService.findOrCreate("field_of_study", data.customFieldOfStudyName, userId);
-      updateData.fieldOfStudyId = field.id;
-    }
-
-    if (data.customHighSchoolProfessionName) {
-      const prof = await codebookService.findOrCreate("high_school_profession", data.customHighSchoolProfessionName, userId);
-      updateData.highSchoolProfessionId = prof.id;
-    }
-
-    if (data.customCityName) {
-      const city = await codebookService.findOrCreate("city", data.customCityName, userId);
-      updateData.highSchoolCityId = city.id;
-      updateData.facultyCityId = city.id;
-    }
-
-    // Enforce Gimnazija rules on update
-    if (data.highSchoolType === "gimnazija") {
-      updateData.highSchoolDuration = "cetverogodisnja";
-      updateData.highSchoolProfessionId = null;
-    }
-
-    return studentRepository.update(id, updateData);
+  async verifyStudent(profileId: string, academicYear: string, adminId: string, ipAddress?: string | null) {
+    const profile = await getProfileOrThrowById(profileId);
+    const completion = await refreshCompletion(profile.userId);
+    if (completion < 100) throw new BadRequestError("Profil je potrebno dovršiti prije administrativne potvrde");
+    const updated = await studentRepository.verifyProfile(profileId, academicYear);
+    await auditService.record({ actorId: adminId, subjectUserId: profile.userId, action: "profile.verify", entityType: "student_profile", entityId: profileId, before: { verifiedAcademicYear: profile.verifiedAcademicYear }, after: updated, ipAddress });
+    return updated;
   },
 
-  async remove(id: string, userId?: string) {
-    const existing = await studentRepository.findById(id);
-    if (!existing) throw new NotFoundError("Student nije pronađen");
-    return studentRepository.softDelete(id, userId);
+  async adminUpdateProfile(profileId: string, data: UpdateProfileDTO, adminId: string, ipAddress?: string | null) {
+    const before = await getProfileOrThrowById(profileId);
+    await studentRepository.updateProfile(before.userId, data);
+    await refreshCompletion(before.userId);
+    const updated = await getProfileOrThrowByUser(before.userId);
+    await auditService.record({ actorId: adminId, subjectUserId: before.userId, action: "profile.update", entityType: "student_profile", entityId: profileId, before, after: updated, ipAddress });
+    return updated;
   },
 
-  async getStats() {
-    return studentRepository.getStats();
+  async adminCreateEducation(profileId: string, data: EducationDTO, adminId: string, ipAddress?: string | null) {
+    const profile = await getProfileOrThrowById(profileId);
+    const item = await studentRepository.createEducation(profileId, data);
+    await refreshCompletion(profile.userId);
+    await auditService.record({ actorId: adminId, subjectUserId: profile.userId, action: "education.create", entityType: "student_education", entityId: item.id, after: item, ipAddress });
+    return item;
   },
 
-  async sendBulkSms(data: SendSmsDTO, userId?: string) {
-    const students = await studentRepository.findByIds(data.studentIds);
-
-    const messages = students.map((s) => {
-      const message = data.messageTemplate
-        .replace(/\{ime\}/gi, s.firstName)
-        .replace(/\{prezime\}/gi, s.lastName);
-
-      return {
-        phone: s.phone,
-        studentId: s.id,
-        studentName: `${s.firstName} ${s.lastName}`,
-        message,
-      };
-    });
-
-    // Print to console instead of actual SMS API
-    console.log("=== SMS PORUKE ===");
-    for (const msg of messages) {
-      console.log(`\nPrimalac: ${msg.studentName} (${msg.phone})`);
-      console.log(`Poruka: ${msg.message}`);
-      console.log("---");
-    }
-    console.log(`\nUkupno poruka: ${messages.length}`);
-    console.log("=== KRAJ ===\n");
-
-    // Log notifications to database
-    await notificationService.logNotifications(
-      messages.map((m) => ({
-        studentId: m.studentId,
-        type: "sms" as const,
-        content: m.message,
-        sentBy: userId ?? null,
-      }))
-    );
-
-    return {
-      sent: messages.length,
-      messages,
-    };
+  async adminUpdateEducation(profileId: string, id: string, data: EducationDTO, adminId: string, ipAddress?: string | null) {
+    const profile = await getProfileOrThrowById(profileId);
+    const before = await studentRepository.findEducation(id, profileId);
+    if (!before) throw new NotFoundError("Zapis obrazovanja nije pronađen");
+    const item = await studentRepository.updateEducation(id, profileId, data);
+    await refreshCompletion(profile.userId);
+    await auditService.record({ actorId: adminId, subjectUserId: profile.userId, action: "education.update", entityType: "student_education", entityId: id, before, after: item, ipAddress });
+    return item;
   },
 
-  async sendBulkEmail(data: SendEmailDTO, userId?: string) {
-    const students = await studentRepository.findByIds(data.studentIds);
+  async adminDeleteEducation(profileId: string, id: string, adminId: string, ipAddress?: string | null) {
+    const profile = await getProfileOrThrowById(profileId);
+    const before = await studentRepository.findEducation(id, profileId);
+    if (!before) throw new NotFoundError("Zapis obrazovanja nije pronađen");
+    const item = await studentRepository.deleteEducation(id, profileId);
+    await refreshCompletion(profile.userId);
+    await auditService.record({ actorId: adminId, subjectUserId: profile.userId, action: "education.delete", entityType: "student_education", entityId: id, before, ipAddress });
+    return item;
+  },
 
-    const results = [];
-    const notificationRecords: Array<{ studentId: string; type: "email"; subject: string; content: string; sentBy: string | null }> = [];
+  async createScholarship(profileId: string, data: ScholarshipDTO, adminId: string, ipAddress?: string | null) {
+    const profile = await getProfileOrThrowById(profileId);
+    const item = await studentRepository.createScholarship(profileId, data, adminId);
+    await auditService.record({ actorId: adminId, subjectUserId: profile.userId, action: "scholarship.create", entityType: "scholarship", entityId: item.id, after: item, ipAddress });
+    return item;
+  },
 
-    for (const s of students) {
-      const messageBody = data.messageTemplate
-        .replace(/\{ime\}/gi, s.firstName)
-        .replace(/\{prezime\}/gi, s.lastName);
+  async updateScholarship(id: string, data: ScholarshipDTO, adminId: string, ipAddress?: string | null) {
+    const before = await studentRepository.findScholarship(id);
+    if (!before) throw new NotFoundError("Stipendija nije pronađena");
+    const profile = await getProfileOrThrowById(before.profileId);
+    const item = await studentRepository.updateScholarship(id, data, adminId);
+    await auditService.record({ actorId: adminId, subjectUserId: profile.userId, action: "scholarship.update", entityType: "scholarship", entityId: id, before, after: item, ipAddress });
+    return item;
+  },
 
-      let success = false;
-      try {
-        success = await sendEmail({
-          to: s.email,
-          subject: data.subject,
-          firstName: s.firstName,
-          lastName: s.lastName,
-          messageBody,
-        });
-      } catch (err) {
-        console.error(`Failed to send email to ${s.email}:`, err);
-      }
+  async deleteScholarship(id: string, adminId: string, ipAddress?: string | null) {
+    const before = await studentRepository.findScholarship(id);
+    if (!before) throw new NotFoundError("Stipendija nije pronađena");
+    const profile = await getProfileOrThrowById(before.profileId);
+    const item = await studentRepository.deleteScholarship(id);
+    await auditService.record({ actorId: adminId, subjectUserId: profile.userId, action: "scholarship.delete", entityType: "scholarship", entityId: id, before, ipAddress });
+    return item;
+  },
 
-      results.push({
-        email: s.email,
-        studentName: `${s.firstName} ${s.lastName}`,
-        success,
-      });
+  getStats() {
+    return studentRepository.getStats(getCurrentAcademicYear());
+  },
 
-      notificationRecords.push({
-        studentId: s.id,
-        type: "email" as const,
-        subject: data.subject,
-        content: messageBody,
-        sentBy: userId ?? null,
-      });
-    }
+  async exportFilteredStudents(filters: StudentQueryDTO) {
+    const result = await studentRepository.findAll({ ...filters, page: 1, limit: 10_000 });
+    const headers = ["Ime", "Prezime", "E-mail", "Grad studiranja", "Fakultet", "Studijski program", "Godina studija", "Status studija", "Dovršenost profila", "Potvrđena akademska godina", "Zadnje ažuriranje"];
+    const rows = result.items.map((item) => [
+      item.firstName,
+      item.lastName,
+      item.email,
+      item.cityName,
+      item.facultyName,
+      item.studyProgramName,
+      item.currentStudyYear,
+      item.studyStatus,
+      `${item.completionPercentage}%`,
+      item.verifiedAcademicYear,
+      item.updatedAt.toISOString(),
+    ]);
+    return `\uFEFF${[headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n")}`;
+  },
 
-    // Log notifications to database
-    await notificationService.logNotifications(notificationRecords);
+  listDataRequests(status?: "submitted" | "in_review" | "completed" | "rejected") {
+    return studentRepository.listDataRequests(status);
+  },
 
-    return {
-      sent: results.filter((r) => r.success).length,
-      total: results.length,
-      results,
-    };
+  async resolveDataRequest(id: string, data: DataRequestResolutionDTO, adminId: string, ipAddress?: string | null) {
+    const before = await studentRepository.findDataRequest(id);
+    if (!before) throw new NotFoundError("Zahtjev nije pronađen");
+    const updated = await studentRepository.resolveDataRequest(id, data.status, data.resolutionNote, adminId);
+    await auditService.record({ actorId: adminId, subjectUserId: before.userId, action: "data_request.resolve", entityType: "data_request", entityId: id, before, after: updated, ipAddress });
+    return updated;
+  },
+
+  async updateAccountStatus(profileId: string, isActive: boolean, adminId: string, ipAddress?: string | null) {
+    const profile = await getProfileOrThrowById(profileId);
+    const updated = await studentRepository.updateAccountStatus(profile.userId, isActive);
+    await auditService.record({ actorId: adminId, subjectUserId: profile.userId, action: isActive ? "account.activate" : "account.deactivate", entityType: "user", entityId: profile.userId, before: { isActive: profile.isActive }, after: { isActive }, ipAddress });
+    return updated;
+  },
+
+  listAuditLogs(page: number, limit: number, subjectUserId?: string) {
+    return studentRepository.listAuditLogs(page, limit, subjectUserId);
   },
 };

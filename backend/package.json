@@ -4,14 +4,17 @@
   "description": "",
   "main": "dist/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "tsx --test src/dto/*.test.ts src/core/**/*.test.ts",
     "dev": "nodemon",
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.scripts.json",
     "prod": "npm run build && node dist/server.js",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:check": "drizzle-kit check",
+    "db:seed": "tsx scripts/seed.ts",
+    "admin:create": "tsx scripts/create-admin.ts"
   },
   "repository": {
     "type": "git",
@@ -27,18 +30,18 @@
   "type": "module",
   "dependencies": {
     "@fastify/cors": "^11.2.0",
+    "@fastify/helmet": "^13.1.0",
     "@fastify/rate-limit": "^10.3.0",
     "@fastify/swagger": "^9.7.0",
     "@react-email/components": "^1.0.12",
     "@scalar/fastify-api-reference": "^1.52.1",
-    "better-auth": "^1.6.2",
+    "better-auth": "^1.6.29",
     "dotenv": "^17.4.1",
     "drizzle-orm": "^0.45.2",
-    "fastify": "^5.8.4",
-    "nodemailer": "^8.0.5",
+    "fastify": "^5.12.0",
+    "nodemailer": "^9.0.5",
     "postgres": "^3.4.9",
     "react": "^19.2.5",
-    "react-email": "^5.2.10",
     "zod": "^4.3.6"
   },
   "devDependencies": {

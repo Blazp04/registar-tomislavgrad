@@ -1,42 +1,38 @@
-import { pgTable, text, timestamp, index, unique } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { pgEnum } from "drizzle-orm/pg-core";
+import { boolean, index, pgEnum, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema.js";
-import { student } from "./student-schema.js";
 
-export const codebookTypeEnum = pgEnum("codebook_type", [
-  "faculty",
-  "field_of_study",
-  "high_school_profession",
+export const codebookTypeValues = [
+  "country",
   "city",
-]);
+  "municipality_settlement",
+  "high_school",
+  "university",
+  "faculty",
+  "study_program",
+  "study_level",
+  "scholarship_type",
+  "scholarship_provider",
+] as const;
 
-export const codebook = pgTable("codebook", {
+export const codebookTypeEnum = pgEnum("codebook_type_v2", codebookTypeValues);
+
+export const codebook = pgTable("codebooks", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-
   type: codebookTypeEnum("type").notNull(),
   name: text("name").notNull(),
-
+  isOfficial: boolean("is_official").default(true).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  createdBy: text("created_by")
-    .references(() => user.id, { onDelete: "set null" }),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull().$onUpdate(() => new Date()),
-  updatedBy: text("updated_by")
-    .references(() => user.id, { onDelete: "set null" }),
+  updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
-  deletedBy: text("deleted_by")
-    .references(() => user.id, { onDelete: "set null" }),
+  deletedBy: text("deleted_by").references(() => user.id, { onDelete: "set null" }),
 }, (table) => [
-  unique("codebook_type_name_uq").on(table.type, table.name),
-  index("codebook_type_idx").on(table.type),
-  index("codebook_name_idx").on(table.name),
-  index("codebook_deleted_at_idx").on(table.deletedAt),
+  unique("codebooks_type_name_uq").on(table.type, table.name),
+  index("codebooks_type_idx").on(table.type),
+  index("codebooks_name_idx").on(table.name),
+  index("codebooks_official_idx").on(table.isOfficial),
+  index("codebooks_deleted_at_idx").on(table.deletedAt),
 ]);
 
-export const codebookRelations = relations(codebook, ({ many }) => ({
-  facultyStudents: many(student, { relationName: "studentFaculty" }),
-  fieldOfStudyStudents: many(student, { relationName: "studentFieldOfStudy" }),
-  highSchoolProfessionStudents: many(student, { relationName: "studentHighSchoolProfession" }),
-  highSchoolCityStudents: many(student, { relationName: "studentHighSchoolCity" }),
-  facultyCityStudents: many(student, { relationName: "studentFacultyCity" }),
-}));
+export type CodebookType = (typeof codebookTypeValues)[number];

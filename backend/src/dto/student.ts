@@ -1,90 +1,112 @@
 import { z } from "zod";
 
-export const createStudentSchema = z.object({
-  firstName: z.string().min(1).max(100),
-  lastName: z.string().min(1).max(100),
-  fatherName: z.string().min(1).max(100),
-  email: z.string().email().max(255),
-  address: z.string().min(1).max(255),
-  phone: z.string().min(6).max(30),
-  isCurrentStudent: z.boolean(),
-  isEmployed: z.boolean(),
-  isWorkingInField: z.boolean().optional().default(false),
-  // High school education
-  highSchoolType: z.enum(["gimnazija", "strukovna"]),
-  highSchoolDuration: z.enum(["trogodisnja", "cetverogodisnja", "petogodisnja"]),
-  highSchoolProfessionId: z.string().uuid().optional(),
-  highSchoolCityId: z.string().uuid(),
-  customHighSchoolProfessionName: z.string().min(2).max(255).optional(),
-  customCityName: z.string().min(2).max(255).optional(),
-  // Faculty
-  facultyId: z.string().uuid(),
-  fieldOfStudyId: z.string().uuid(),
-  facultyCityId: z.string().uuid(),
-  // "Drugo" option — if provided, auto-creates a codebook entry
-  customFacultyName: z.string().min(2).max(255).optional(),
-  customFieldOfStudyName: z.string().min(2).max(255).optional(),
-}).refine((data) => {
-  // Gimnazija is always 4-year
-  if (data.highSchoolType === "gimnazija") return true;
-  // Strukovna requires profession
-  return !!data.highSchoolProfessionId || !!data.customHighSchoolProfessionName;
-}, {
-  message: "Struka je obavezna za strukovnu školu",
-  path: ["highSchoolProfessionId"],
+const currentYear = new Date().getFullYear();
+const year = z.coerce.number().int().min(1950).max(currentYear + 15);
+const nullableCodebookId = z.string().uuid().nullable().optional();
+const academicYear = z.string().regex(/^\d{4}\/\d{4}$/, "Akademska godina mora biti u obliku 2026/2027");
+
+export const updateProfileSchema = z.object({
+  firstName: z.string().trim().min(1).max(100).optional(),
+  lastName: z.string().trim().min(1).max(100).optional(),
+  birthDate: z.string().date().nullable().optional(),
+  address: z.string().trim().max(255).nullable().optional(),
+  settlementId: nullableCodebookId,
+  phone: z.string().trim().min(6).max(30).nullable().optional(),
 });
 
-export const updateStudentSchema = z.object({
-  firstName: z.string().min(1).max(100).optional(),
-  lastName: z.string().min(1).max(100).optional(),
-  fatherName: z.string().min(1).max(100).optional(),
-  email: z.string().email().max(255).optional(),
-  address: z.string().min(1).max(255).optional(),
-  phone: z.string().min(6).max(30).optional(),
-  isCurrentStudent: z.boolean().optional(),
-  isEmployed: z.boolean().optional(),
-  isWorkingInField: z.boolean().optional(),
-  // High school education
-  highSchoolType: z.enum(["gimnazija", "strukovna"]).optional(),
-  highSchoolDuration: z.enum(["trogodisnja", "cetverogodisnja", "petogodisnja"]).optional(),
-  highSchoolProfessionId: z.string().uuid().nullable().optional(),
-  highSchoolCityId: z.string().uuid().optional(),
-  customHighSchoolProfessionName: z.string().min(2).max(255).optional(),
-  customCityName: z.string().min(2).max(255).optional(),
-  // Faculty
-  facultyId: z.string().uuid().optional(),
-  fieldOfStudyId: z.string().uuid().optional(),
-  facultyCityId: z.string().uuid().optional(),
-  customFacultyName: z.string().min(2).max(255).optional(),
-  customFieldOfStudyName: z.string().min(2).max(255).optional(),
+export const educationSchema = z.object({
+  type: z.enum(["high_school", "higher_education"]),
+  countryId: nullableCodebookId,
+  cityId: nullableCodebookId,
+  highSchoolId: nullableCodebookId,
+  highSchoolProgram: z.string().trim().max(255).nullable().optional(),
+  graduationYear: year.nullable().optional(),
+  universityId: nullableCodebookId,
+  facultyId: nullableCodebookId,
+  studyProgramId: nullableCodebookId,
+  studyLevelId: nullableCodebookId,
+  studyMode: z.enum(["full_time", "part_time", "distance", "other"]).nullable().optional(),
+  firstEnrollmentYear: year.nullable().optional(),
+  currentStudyYear: z.coerce.number().int().min(1).max(10).nullable().optional(),
+  expectedGraduationYear: year.nullable().optional(),
+  studyStatus: z.enum(["active", "paused", "completed", "withdrawn"]).nullable().optional(),
+  isCurrent: z.boolean().default(false),
+}).superRefine((value, ctx) => {
+  const required = value.type === "high_school"
+    ? ["cityId", "highSchoolId", "highSchoolProgram", "graduationYear"] as const
+    : ["countryId", "cityId", "universityId", "facultyId", "studyProgramId", "studyLevelId", "studyMode", "firstEnrollmentYear", "currentStudyYear", "expectedGraduationYear", "studyStatus"] as const;
+
+  for (const field of required) {
+    if (value[field] === null || value[field] === undefined || value[field] === "") {
+      ctx.addIssue({ code: "custom", path: [field], message: "Polje je obavezno" });
+    }
+  }
+});
+
+export const scholarshipSchema = z.object({
+  name: z.string().trim().max(255).nullable().optional(),
+  scholarshipTypeId: nullableCodebookId,
+  providerId: z.string().uuid(),
+  academicYear,
+  status: z.enum(["recorded", "active", "completed", "suspended", "rejected"]),
+  startDate: z.string().date().nullable().optional(),
+  endDate: z.string().date().nullable().optional(),
+  amount: z.coerce.number().nonnegative().max(1_000_000).nullable().optional(),
+  currency: z.string().trim().length(3).default("BAM"),
+  adminNote: z.string().trim().max(2000).nullable().optional(),
+}).refine((value) => value.name || value.scholarshipTypeId, {
+  path: ["name"],
+  message: "Unesite naziv ili odaberite vrstu stipendije",
+}).refine((value) => !value.startDate || !value.endDate || value.startDate <= value.endDate, {
+  path: ["endDate"],
+  message: "Datum završetka mora biti nakon datuma početka",
 });
 
 export const studentQuerySchema = z.object({
-  search: z.string().optional(),
+  search: z.string().trim().max(100).optional(),
+  academicYear: academicYear.optional(),
+  cityId: z.string().uuid().optional(),
   facultyId: z.string().uuid().optional(),
-  fieldOfStudyId: z.string().uuid().optional(),
-  isCurrentStudent: z.enum(["true", "false"]).optional().transform(v => v === undefined ? undefined : v === "true"),
-  isEmployed: z.enum(["true", "false"]).optional().transform(v => v === undefined ? undefined : v === "true"),
-  isWorkingInField: z.enum(["true", "false"]).optional().transform(v => v === undefined ? undefined : v === "true"),
-  page: z.string().optional().default("1").transform(Number).pipe(z.number().int().positive()),
-  limit: z.string().optional().default("20").transform(Number).pipe(z.number().int().positive().max(100)),
-  sort: z.enum(["lastName", "firstName", "facultyName", "fieldOfStudyName", "createdAt"]).optional(),
-  order: z.enum(["asc", "desc"]).optional().default("asc"),
+  studyProgramId: z.string().uuid().optional(),
+  currentStudyYear: z.coerce.number().int().min(1).max(10).optional(),
+  studyStatus: z.enum(["active", "paused", "completed", "withdrawn"]).optional(),
+  scholarshipTypeId: z.string().uuid().optional(),
+  scholarshipStatus: z.enum(["recorded", "active", "completed", "suspended", "rejected"]).optional(),
+  updatedBefore: z.string().datetime({ offset: true }).optional(),
+  updatedAfter: z.string().datetime({ offset: true }).optional(),
+  verification: z.enum(["verified", "unverified"]).optional(),
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  sort: z.enum(["lastName", "firstName", "updatedAt", "completionPercentage"]).default("lastName"),
+  order: z.enum(["asc", "desc"]).default("asc"),
 });
 
-export const sendSmsSchema = z.object({
-  studentIds: z.array(z.string().uuid()).min(1).max(500),
-  messageTemplate: z.string().min(1).max(1000),
+export const profileVerificationSchema = z.object({
+  academicYear,
 });
 
-export const sendEmailSchema = z.object({
-  studentIds: z.array(z.string().uuid()).min(1).max(500),
-  subject: z.string().min(1, "Naslov je obavezan").max(200),
-  messageTemplate: z.string().min(1, "Poruka je obavezna").max(5000),
+export const dataRequestSchema = z.object({
+  type: z.enum(["correction", "export", "restriction", "deletion"]),
+  details: z.string().trim().max(2000).nullable().optional(),
 });
 
-export type CreateStudentDTO = z.infer<typeof createStudentSchema>;
-export type UpdateStudentDTO = z.infer<typeof updateStudentSchema>;
+export const dataRequestResolutionSchema = z.object({
+  status: z.enum(["in_review", "completed", "rejected"]),
+  resolutionNote: z.string().trim().max(2000).nullable().optional(),
+});
+
+export const consentSchema = z.object({
+  type: z.literal("optional_updates"),
+  accepted: z.boolean(),
+  version: z.string().trim().min(1).max(50),
+});
+
+export const accountStatusSchema = z.object({ isActive: z.boolean() });
+
+export type UpdateProfileDTO = z.infer<typeof updateProfileSchema>;
+export type EducationDTO = z.infer<typeof educationSchema>;
+export type ScholarshipDTO = z.infer<typeof scholarshipSchema>;
 export type StudentQueryDTO = z.infer<typeof studentQuerySchema>;
-export type SendSmsDTO = z.infer<typeof sendSmsSchema>;
-export type SendEmailDTO = z.infer<typeof sendEmailSchema>;
+export type DataRequestDTO = z.infer<typeof dataRequestSchema>;
+export type DataRequestResolutionDTO = z.infer<typeof dataRequestResolutionSchema>;
+export type ConsentDTO = z.infer<typeof consentSchema>;

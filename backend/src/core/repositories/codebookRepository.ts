@@ -1,61 +1,51 @@
-import { eq, and, isNull, ilike, sql, type SQL } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "../database/db.js";
-import { codebook } from "../database/codebook-schema.js";
+import { codebook, type CodebookType } from "../database/codebook-schema.js";
 
-const notDeleted = isNull(codebook.deletedAt);
+const active = isNull(codebook.deletedAt);
 
 export const codebookRepository = {
   async findById(id: string) {
-    const result = await db
-      .select()
-      .from(codebook)
-      .where(and(eq(codebook.id, id), notDeleted))
-      .limit(1);
-    return result[0] ?? null;
+    const [item] = await db.select().from(codebook).where(and(eq(codebook.id, id), active)).limit(1);
+    return item ?? null;
   },
 
-  async findByTypeAndName(type: "faculty" | "field_of_study" | "high_school_profession" | "city", name: string) {
-    const result = await db
+  async findByTypeAndName(type: CodebookType, name: string) {
+    const [item] = await db
       .select()
       .from(codebook)
-      .where(and(eq(codebook.type, type), eq(codebook.name, name), notDeleted))
+      .where(and(eq(codebook.type, type), sql`lower(${codebook.name}) = lower(${name})`, active))
       .limit(1);
-    return result[0] ?? null;
+    return item ?? null;
   },
 
-  async findAllByType(type: "faculty" | "field_of_study" | "high_school_profession" | "city") {
+  async findAllByType(type: CodebookType, includeUnofficial = false) {
     return db
       .select()
       .from(codebook)
-      .where(and(eq(codebook.type, type), notDeleted))
-      .orderBy(codebook.name);
+      .where(and(eq(codebook.type, type), active, includeUnofficial ? undefined : eq(codebook.isOfficial, true)))
+      .orderBy(codebook.isOfficial, codebook.name);
   },
 
-  async create(data: { type: "faculty" | "field_of_study" | "high_school_profession" | "city"; name: string; createdBy?: string }) {
-    const result = await db.insert(codebook).values({
-      type: data.type,
-      name: data.name,
-      createdBy: data.createdBy,
+  async create(data: { type: CodebookType; name: string; isOfficial: boolean; createdBy?: string }) {
+    const [item] = await db.insert(codebook).values({
+      ...data,
       updatedBy: data.createdBy,
     }).returning();
-    return result[0];
+    return item;
   },
 
-  async update(id: string, data: { name?: string; updatedBy?: string }) {
-    const result = await db
-      .update(codebook)
-      .set(data)
-      .where(and(eq(codebook.id, id), notDeleted))
-      .returning();
-    return result[0] ?? null;
+  async update(id: string, data: { name?: string; isOfficial?: boolean; updatedBy?: string }) {
+    const [item] = await db.update(codebook).set(data).where(and(eq(codebook.id, id), active)).returning();
+    return item ?? null;
   },
 
   async softDelete(id: string, deletedBy?: string) {
-    const result = await db
+    const [item] = await db
       .update(codebook)
       .set({ deletedAt: new Date(), deletedBy })
-      .where(and(eq(codebook.id, id), notDeleted))
+      .where(and(eq(codebook.id, id), active))
       .returning();
-    return result[0] ?? null;
+    return item ?? null;
   },
 };
