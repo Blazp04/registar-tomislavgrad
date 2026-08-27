@@ -24,9 +24,9 @@ Work in the `backend/` directory. Only write comments that provide business cont
 
 ### File naming
 
-- `vehicle-schema.ts` — contains `vehicle` table + `vehicleRelations`
-- `reservation-schema.ts` — contains `reservation` table + `reservationRelations`
-- `location-schema.ts` — contains `location` table + `locationRelations`
+- `vehicle-schema.ts` - contains `vehicle` table + `vehicleRelations`
+- `reservation-schema.ts` - contains `reservation` table + `reservationRelations`
+- `location-schema.ts` - contains `location` table + `locationRelations`
 
 ### schema.ts re-export
 
@@ -69,17 +69,17 @@ See [repository-pattern.md](repository-pattern.md) for the complete CRUD reposit
 | Auth/user references | `set null` |
 | Owned child (profile, settings) | `cascade` |
 
-Prefer `restrict` — soft delete means parents are rarely actually deleted.
+Prefer `restrict` - soft delete means parents are rarely actually deleted.
 
 ## Migration Workflow
 
 ```bash
 cd backend
 npm run db:generate   # Generate migration from schema
-npm run db:push       # Direct push — dev ONLY
+npm run db:push       # Direct push - dev ONLY
 ```
 
-1. Always generate — never write migration SQL manually
+1. Always generate - never write migration SQL manually
 2. Review generated SQL before applying
 3. Never drop columns in production
 4. Add indexes for foreign keys, WHERE columns, and `deletedAt`

@@ -21,7 +21,7 @@ export const vehicle = pgTable("vehicle", {
   organizationId: text("organization_id").notNull()
     .references(() => organization.id, { onDelete: "restrict" }),
 
-  // Audit columns — REQUIRED on every table
+  // Audit columns - REQUIRED on every table
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   createdBy: text("created_by")
     .references(() => user.id, { onDelete: "set null" }),
@@ -29,7 +29,7 @@ export const vehicle = pgTable("vehicle", {
   updatedBy: text("updated_by")
     .references(() => user.id, { onDelete: "set null" }),
 
-  // Soft delete — REQUIRED on every table
+  // Soft delete - REQUIRED on every table
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   deletedBy: text("deleted_by")
     .references(() => user.id, { onDelete: "set null" }),

@@ -4,8 +4,8 @@
 Općina Tomislavgrad nema centralizirani sustav za evidenciju bivših i trenutnih studenata iz općine. Podaci se prikupljaju ručno i teško je generirati izvještaje ili komunicirati sa studentima.
 
 ## Users
-- **Primary**: Radnici općine (admin) — pregledavaju, filtriraju i upravljaju podacima studenata, šalju SMS poruke
-- **Secondary**: Studenti (public) — unose svoje podatke putem javnog obrasca
+- **Primary**: Radnici općine (admin) - pregledavaju, filtriraju i upravljaju podacima studenata, šalju SMS poruke
+- **Secondary**: Studenti (public) - unose svoje podatke putem javnog obrasca
 
 ## Core Features
 | # | Feature | Description | Priority |

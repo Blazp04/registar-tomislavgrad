@@ -117,14 +117,7 @@ function StatCard({
   );
 }
 
-function Insight({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2.5 text-xs leading-5 text-muted-foreground">
-      <span className="font-semibold text-foreground">Što podatak govori: </span>
-      {children}
-    </div>
-  );
-}
+
 
 function EmptyChart({ label = "Nema podataka za prikaz" }: { label?: string }) {
   return <div className="grid h-full min-h-52 place-items-center text-sm text-muted-foreground">{label}</div>;
@@ -132,8 +125,6 @@ function EmptyChart({ label = "Nema podataka za prikaz" }: { label?: string }) {
 
 function RankingChart({
   data,
-  total,
-  singular,
   paletteOffset = 0,
 }: {
   data: Array<{ name: string | number | null; count: number }>;
@@ -145,7 +136,6 @@ function RankingChart({
     const fullName = String(item.name ?? "Nije uneseno");
     return { ...item, fullName, label: shorten(fullName) };
   });
-  const leader = shown[0];
   const maxCount = Math.max(...shown.map((item) => item.count), 1);
 
   if (shown.length === 0) return <EmptyChart />;
@@ -173,10 +163,7 @@ function RankingChart({
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <Insight>
-        Najzastupljeniji {singular} je <strong className="text-foreground">{leader.fullName}</strong>. Broj studenata: {numberFormatter.format(leader.count)}
-        {total > 0 ? ` (${percentage(leader.count, total)}% svih profila)` : ""}.
-      </Insight>
+
     </div>
   );
 }
@@ -222,15 +209,9 @@ export default function DashboardPage() {
     ...item,
     label: item.name === null ? "Nije uneseno" : `${item.name}. godina`,
   }));
-  const leadingStudyYear = [...studyYearData].sort((a, b) => b.count - a.count)[0];
   const studyYearMax = Math.max(...studyYearData.map((item) => item.count), 1);
 
   const scholarshipTrend = [...data.scholarshipByYear].reverse();
-  const latestScholarshipYear = data.scholarshipByYear[0];
-  const previousScholarshipYear = data.scholarshipByYear[1];
-  const scholarshipDelta = latestScholarshipYear && previousScholarshipYear
-    ? latestScholarshipYear.count - previousScholarshipYear.count
-    : null;
   const scholarshipTrendMax = Math.max(...scholarshipTrend.map((item) => item.count), 1);
 
   const scholarshipTypes = data.scholarshipByType.slice(0, 8).map((item) => ({
@@ -245,7 +226,6 @@ export default function DashboardPage() {
     fill: STATUS_COLORS[item.name],
   }));
   const scholarshipTotal = scholarshipStatuses.reduce((sum, item) => sum + item.count, 0);
-  const activeScholarships = scholarshipStatuses.find((item) => item.name === "active")?.count ?? 0;
   const selectedEducationData = educationView === "city"
     ? data.byCity
     : educationView === "faculty"
@@ -304,11 +284,7 @@ export default function DashboardPage() {
                   </ResponsiveContainer>
                 )}
               </div>
-              <Insight>
-                {data.active > 0
-                  ? `${percentage(data.active, data.total)}% profila ima aktivan studij. Student može biti u obje kategorije ako ima više obrazovnih zapisa.`
-                  : "Još nema evidentiranih aktivnih studija. Provjerite jesu li obrazovni podaci studenata uneseni."}
-              </Insight>
+
             </CardContent>
           </Card>
 
@@ -339,11 +315,7 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
-              <Insight>
-                {data.unverified === 0 && data.stale === 0
-                  ? "Svi profili su potvrđeni i ažurirani unutar zadnjih godinu dana."
-                  : `Prioritet je obraditi ${data.unverified} nepotvrđenih i ${data.stale} neažuriranih profila.`}
-              </Insight>
+
             </CardContent>
           </Card>
         </div>
@@ -395,12 +367,7 @@ export default function DashboardPage() {
                   </ResponsiveContainer>
                 )}
               </div>
-              {leadingStudyYear && (
-                <Insight>
-                  Najviše je studenata na <strong className="text-foreground">{leadingStudyYear.label.toLowerCase()}</strong>: {leadingStudyYear.count}
-                  {data.total > 0 ? ` (${percentage(leadingStudyYear.count, data.total)}% svih profila)` : ""}.
-                </Insight>
-              )}
+
             </CardContent>
           </Card>
         </div>
@@ -433,14 +400,7 @@ export default function DashboardPage() {
                   </ResponsiveContainer>
                 )}
               </div>
-              {latestScholarshipYear && (
-                <Insight>
-                  Broj stipendista u {latestScholarshipYear.name}: {latestScholarshipYear.count}
-                  {scholarshipDelta === null || scholarshipDelta === 0
-                    ? "."
-                    : `, ${Math.abs(scholarshipDelta)} ${scholarshipDelta > 0 ? "više" : "manje"} nego ${previousScholarshipYear.name}.`}
-                </Insight>
-              )}
+
             </CardContent>
           </Card>
 
@@ -479,11 +439,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-              {scholarshipStatuses.length > 0 && (
-                <Insight>
-                  Aktivnih je {activeScholarships} od {scholarshipTotal} stipendijskih zapisa ({percentage(activeScholarships, scholarshipTotal)}%).
-                </Insight>
-              )}
+
             </CardContent>
           </Card>
 
@@ -514,11 +470,7 @@ export default function DashboardPage() {
                   </ResponsiveContainer>
                 )}
               </div>
-              {scholarshipTypes[0] && (
-                <Insight>
-                  Najčešća je <strong className="text-foreground">{scholarshipTypes[0].fullName}</strong>. Broj evidentiranih stipendija: {scholarshipTypes[0].count}.
-                </Insight>
-              )}
+
             </CardContent>
           </Card>
         </div>

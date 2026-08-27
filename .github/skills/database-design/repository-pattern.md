@@ -40,7 +40,7 @@ export const vehicleRepository = {
     return result[0] ?? null;
   },
 
-  // Soft delete — NEVER use db.delete()
+  // Soft delete - NEVER use db.delete()
   async softDelete(id: string) {
     const result = await db
       .update(vehicle)

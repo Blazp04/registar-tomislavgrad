@@ -1,21 +1,21 @@
 ---
 name: product-planning
-description: '**WORKFLOW SKILL** — Structure a project idea into a product brief and feature list. Generates output in project-planning/ folder.'
-argument-hint: 'Describe your project idea — can be vague, a few sentences is enough'
+description: '**WORKFLOW SKILL** - Structure a project idea into a product brief and feature list. Generates output in project-planning/ folder.'
+argument-hint: 'Describe your project idea - can be vague, a few sentences is enough'
 ---
 
 # Product Planning Workflow
 
-Structure a project idea into actionable planning documents. Keep everything concise — bullet points over paragraphs.
+Structure a project idea into actionable planning documents. Keep everything concise - bullet points over paragraphs.
 
 ## Output
 
 All output goes to `project-planning/`:
 
-- `product-brief.md` — Core product definition
-- `gemini-research-prompt.md` — Prompt for Gemini Deep Research
-- `features.md` — Feature list with priorities
-- `epics/[name].md` — Epic breakdowns (post-research)
+- `product-brief.md` - Core product definition
+- `gemini-research-prompt.md` - Prompt for Gemini Deep Research
+- `features.md` - Feature list with priorities
+- `epics/[name].md` - Epic breakdowns (post-research)
 
 ## Phase 1: Extract the Idea
 
@@ -40,8 +40,8 @@ Create `project-planning/product-brief.md`:
 [2-3 sentences max]
 
 ## Users
-- **Primary**: [who] — [needs]
-- **Secondary**: [who] — [needs]
+- **Primary**: [who] - [needs]
+- **Secondary**: [who] - [needs]
 
 ## Core Features
 | # | Feature | Description | Priority |
@@ -55,12 +55,12 @@ Create `project-planning/product-brief.md`:
 - [bullet list]
 
 ## Domain Context
-[Only if relevant — regulations, constraints, terminology]
+[Only if relevant - regulations, constraints, terminology]
 ```
 
 ## Phase 3: Gemini Research Prompt
 
-Create `project-planning/gemini-research-prompt.md` — a prompt for Gemini Deep Research covering:
+Create `project-planning/gemini-research-prompt.md` - a prompt for Gemini Deep Research covering:
 
 1. Domain challenges & regulations
 2. Competitors (features, pricing, gaps)
@@ -111,6 +111,6 @@ After Gemini results come back, user can invoke again to:
 
 ## Principles
 
-- **Concise over thorough** — bullet points, not essays
-- **Ask only what's missing** — don't re-ask what the user already said
-- **Move fast** — generate docs, let user refine
+- **Concise over thorough** - bullet points, not essays
+- **Ask only what's missing** - don't re-ask what the user already said
+- **Move fast** - generate docs, let user refine

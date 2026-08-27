@@ -17,7 +17,7 @@ const envSchema = z.object({
   BETTER_AUTH_URL: z.string().url(),
   PUBLIC_APP_URL: z.string().url().default("http://localhost:5173"),
 
-  // Email (optional — disabled if not set)
+  // Email (optional - disabled if not set)
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().int().default(587),
   SMTP_USER: z.string().optional(),

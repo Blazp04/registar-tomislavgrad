@@ -1,12 +1,12 @@
 ---
 name: branding
-description: '**WORKFLOW SKILL** — Define brand identity with colors, typography, spacing, and design tokens. USE FOR: creating brand guidelines from scratch; reverse-engineering brand identity from inspiration images; generating brand config JSON for AI consumption; defining design system foundations. Outputs MD guidelines + JSON config to project-planning/branding/. Use when starting branding, updating visual identity, or extracting style from reference images.'
+description: '**WORKFLOW SKILL** - Define brand identity with colors, typography, spacing, and design tokens. USE FOR: creating brand guidelines from scratch; reverse-engineering brand identity from inspiration images; generating brand config JSON for AI consumption; defining design system foundations. Outputs MD guidelines + JSON config to project-planning/branding/. Use when starting branding, updating visual identity, or extracting style from reference images.'
 argument-hint: 'Describe your brand vision, or say "analyze images" to reverse-engineer from inspiration'
 ---
 
 # Branding Workflow
 
-Define and document brand identity — colors, typography, spacing, and design tokens. Outputs both human-readable guidelines (MD) and machine-readable config (JSON) for AI tools.
+Define and document brand identity - colors, typography, spacing, and design tokens. Outputs both human-readable guidelines (MD) and machine-readable config (JSON) for AI tools.
 
 ## When to Use
 
@@ -49,7 +49,7 @@ Then generate the brand system using the templates below.
 
 When the user uploads inspiration images:
 
-1. Analyze each image using Gemini Vision API — run [analyze-image.py](./scripts/analyze-image.py)
+1. Analyze each image using Gemini Vision API - run [analyze-image.py](./scripts/analyze-image.py)
 2. Extract: dominant colors (hex), typography style, spacing patterns, visual weight, mood
 3. Synthesize findings across all images into a unified brand direction
 4. Generate the brand system based on extracted patterns
@@ -232,7 +232,7 @@ This JSON can be used directly by AI agents when generating UI code, Tailwind co
 
 ## Key Principles
 
-- **Consistency**: Every color and size comes from the defined system — no magic numbers
+- **Consistency**: Every color and size comes from the defined system - no magic numbers
 - **Accessibility**: Color contrast must meet WCAG AA (4.5:1 for text, 3:1 for large text)
 - **Dual output**: Always generate both MD (for humans) and JSON (for AI/tools)
-- **Iterative**: Brand evolves — update the files, don't start from scratch
+- **Iterative**: Brand evolves - update the files, don't start from scratch

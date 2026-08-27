@@ -1,6 +1,6 @@
 # Audit Logging
 
-Every mutation (create, update, soft-delete) MUST produce an audit log entry. Audit logs are immutable — never update or delete them.
+Every mutation (create, update, soft-delete) MUST produce an audit log entry. Audit logs are immutable - never update or delete them.
 
 ## Audit Log Table
 
@@ -29,19 +29,19 @@ export const auditLog = pgTable("audit_log", {
   userId: text("user_id")
     .references(() => user.id, { onDelete: "set null" }),
 
-  // What changed — store old and new values
+  // What changed - store old and new values
   changes: jsonb("changes"),  // { field: { old: "x", new: "y" } }
 
   // Context
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
 
-  // Timestamp only — no updatedAt, no soft delete (audit logs are immutable)
+  // Timestamp only - no updatedAt, no soft delete (audit logs are immutable)
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 ```
 
-**This table does NOT have `updatedAt`, `deletedAt`, or `isDeleted`** — audit logs are append-only and permanent.
+**This table does NOT have `updatedAt`, `deletedAt`, or `isDeleted`** - audit logs are append-only and permanent.
 
 ## Audit Service
 
@@ -149,8 +149,8 @@ async remove(id: string, user: AuthUser) {
 ## Rules
 
 - **Every create, update, and soft-delete** in a service MUST call `auditService.log()`
-- **Never skip audit** — even bulk operations must produce individual entries
+- **Never skip audit** - even bulk operations must produce individual entries
 - **Never modify or delete** audit log records
-- **Store diffs on update** — use `auditService.diff()` to capture what changed
-- **Pass userId** from the authenticated request — never log without attribution
+- **Store diffs on update** - use `auditService.diff()` to capture what changed
+- **Pass userId** from the authenticated request - never log without attribution
 - **Use transactions** when the audit log and the mutation must be atomic

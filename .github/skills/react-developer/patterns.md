@@ -102,4 +102,4 @@ function MyComponent() {
 }
 ```
 
-**NEVER store server data in Zustand — use React Query.**
+**NEVER store server data in Zustand - use React Query.**

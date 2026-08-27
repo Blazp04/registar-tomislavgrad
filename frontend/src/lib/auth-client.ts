@@ -1,4 +1,4 @@
-// Re-export from services — all auth logic lives in services/auth.ts
+// Re-export from services - all auth logic lives in services/auth.ts
 export {
   authClient,
   signIn,

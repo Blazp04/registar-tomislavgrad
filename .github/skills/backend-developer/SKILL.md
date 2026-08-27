@@ -21,13 +21,13 @@ Work exclusively in the `backend/` directory. Only write comments that provide b
 
 ## Architecture
 
-Layered — each layer has a single responsibility:
+Layered - each layer has a single responsibility:
 
-- **Routes** (`src/routes/`) — Route definitions with OpenAPI schemas. No logic.
-- **Handlers** (`src/handlers/`) — HTTP layer only. Parse request, call service, format response.
-- **Services** (`src/core/services/`) — Business logic. Orchestrates repositories, enforces rules.
-- **Repositories** (`src/core/repositories/`) — Data access with Drizzle ORM. No business logic.
-- **DTOs** (`src/dto/`) — Zod schemas for request/response validation.
+- **Routes** (`src/routes/`) - Route definitions with OpenAPI schemas. No logic.
+- **Handlers** (`src/handlers/`) - HTTP layer only. Parse request, call service, format response.
+- **Services** (`src/core/services/`) - Business logic. Orchestrates repositories, enforces rules.
+- **Repositories** (`src/core/repositories/`) - Data access with Drizzle ORM. No business logic.
+- **DTOs** (`src/dto/`) - Zod schemas for request/response validation.
 
 ## Project Structure
 
@@ -88,7 +88,7 @@ Use custom error classes from `src/core/utils/errors.ts`:
 | `ValidationError` | 422 |
 | `InternalServerError` | 500 |
 
-Let errors propagate — the global `errorHandler` middleware handles them. Do NOT catch errors in handlers unless transforming them.
+Let errors propagate - the global `errorHandler` middleware handles them. Do NOT catch errors in handlers unless transforming them.
 
 ## Response Format
 
@@ -96,7 +96,7 @@ Always use `successResponse` / `errorResponse` from `src/core/utils/response.ts`
 
 ## OpenAPI
 
-All routes **MUST** include OpenAPI schema — the frontend generates types from it. View docs at `http://localhost:3000/docs` (Scalar UI).
+All routes **MUST** include OpenAPI schema - the frontend generates types from it. View docs at `http://localhost:3000/docs` (Scalar UI).
 
 ## Adding New Endpoints
 

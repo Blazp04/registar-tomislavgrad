@@ -50,7 +50,7 @@ Before any frontend work involving API calls:
 cd backoffice && npm run sync-schema
 ```
 
-**ALWAYS use generated types from `types/api.d.ts` — NEVER create manual API types.**
+**ALWAYS use generated types from `types/api.d.ts` - NEVER create manual API types.**
 
 ## Patterns
 

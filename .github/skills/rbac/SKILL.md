@@ -55,7 +55,7 @@ preHandler: [authPreHandler, requirePermission("vehicles.create")]
 // Multiple permissions (ALL required)
 preHandler: [authPreHandler, requirePermissions(["reservations.read", "reservations.approve"])]
 
-// Auth only — any authenticated user
+// Auth only - any authenticated user
 preHandler: [authPreHandler]
 ```
 

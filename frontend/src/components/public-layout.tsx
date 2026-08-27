@@ -16,7 +16,7 @@ export default function PublicLayout() {
     <div className="min-h-svh bg-[#fbfaf6] text-[#102d3d]">
       <header className="sticky top-0 z-40 border-b border-[#cdd0ca] bg-[#f1eee6]/94 backdrop-blur-xl">
         <div className="mx-auto flex h-18 max-w-[90rem] items-center justify-between px-5 sm:px-8 lg:px-12 xl:px-16">
-          <Link to="/" className="flex items-center gap-3" aria-label="Registar studenata i stipendija — početna">
+          <Link to="/" className="flex items-center gap-3" aria-label="Registar studenata i stipendija - početna">
             <img src="/grb-tomislavgrad.png" alt="Općina Tomislavgrad" className="h-10 w-[146px] object-contain object-left sm:w-[170px]" />
             <span className="hidden h-8 w-px bg-[#bfc4c0] sm:block" aria-hidden="true" />
             <span className="hidden text-[0.67rem] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#53666f] sm:block">

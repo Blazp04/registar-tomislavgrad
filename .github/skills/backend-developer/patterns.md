@@ -2,7 +2,7 @@
 
 ## Handler
 
-Thin — parse request, call service, format response:
+Thin - parse request, call service, format response:
 
 ```typescript
 export async function getVehicleHandler(
@@ -73,12 +73,12 @@ return reply.send(successResponse(data, {
 }));
 ```
 
-## Auth — Route with Permission Guard
+## Auth - Route with Permission Guard
 
 ```typescript
 import { authPreHandler, requirePermission } from "../core/middleware/authMiddleware";
 
-// Protected route — requires authentication + permission
+// Protected route - requires authentication + permission
 fastify.route({
   method: "POST",
   url: "/vehicles",
@@ -93,7 +93,7 @@ fastify.route({
   handler: createVehicleHandler,
 });
 
-// Auth only — any authenticated user, no specific permission
+// Auth only - any authenticated user, no specific permission
 fastify.route({
   method: "GET",
   url: "/profile",
@@ -107,7 +107,7 @@ fastify.route({
   handler: getProfileHandler,
 });
 
-// Public route — no auth at all
+// Public route - no auth at all
 fastify.route({
   method: "GET",
   url: "/health",
@@ -116,10 +116,10 @@ fastify.route({
 });
 ```
 
-## Auth — Accessing User in Handler/Service
+## Auth - Accessing User in Handler/Service
 
 ```typescript
-// Handler — extract user from request and pass to service
+// Handler - extract user from request and pass to service
 export async function createVehicleHandler(
   request: FastifyRequest<{ Body: CreateVehicleDTO }>,
   reply: FastifyReply
@@ -128,7 +128,7 @@ export async function createVehicleHandler(
   return reply.status(201).send(successResponse(vehicle));
 }
 
-// Service — user is typed as AuthUser from the JWT
+// Service - user is typed as AuthUser from the JWT
 export const vehicleService = {
   async create(data: CreateVehicleDTO, user: AuthUser) {
     // user.id, user.role, user.organizationId are available

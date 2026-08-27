@@ -1,6 +1,6 @@
 ---
 name: image-generation
-description: '**WORKFLOW SKILL** — Generate images using Nano Banana API based on brand guidelines. USE FOR: creating product mockups; generating UI illustrations; producing marketing visuals; creating brand-consistent imagery. Reads brand config from project-planning/branding/brand-config.json for style consistency. Use when you need to generate images that match the project brand.'
+description: '**WORKFLOW SKILL** - Generate images using Nano Banana API based on brand guidelines. USE FOR: creating product mockups; generating UI illustrations; producing marketing visuals; creating brand-consistent imagery. Reads brand config from project-planning/branding/brand-config.json for style consistency. Use when you need to generate images that match the project brand.'
 argument-hint: 'Describe the image you want to generate, e.g. "hero image for landing page with abstract shapes"'
 ---
 
@@ -69,7 +69,7 @@ After generation:
 
 ## Script Reference
 
-- [generate-image.py](./scripts/generate-image.py) — Main generation script using Nano Banana API
+- [generate-image.py](./scripts/generate-image.py) - Main generation script using Nano Banana API
 
 ## Prompt Engineering Tips
 
@@ -85,4 +85,4 @@ When building prompts for brand-consistent images:
 
 - **Brand consistency**: Every generated image should feel like it belongs to the same brand
 - **Prompt logging**: Always log the final prompt so results can be reproduced
-- **Iterate**: Image generation is iterative — expect 2-3 rounds of refinement
+- **Iterate**: Image generation is iterative - expect 2-3 rounds of refinement

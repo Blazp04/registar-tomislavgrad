@@ -372,8 +372,8 @@ export default function StudentsPage() {
                         set({
                           updatedAfter: event.target.value
                             ? new Date(
-                                `${event.target.value}T00:00:00`,
-                              ).toISOString()
+                              `${event.target.value}T00:00:00`,
+                            ).toISOString()
                             : undefined,
                         })
                       }
@@ -394,8 +394,8 @@ export default function StudentsPage() {
                         set({
                           updatedBefore: event.target.value
                             ? new Date(
-                                `${event.target.value}T23:59:59`,
-                              ).toISOString()
+                              `${event.target.value}T23:59:59`,
+                            ).toISOString()
                             : undefined,
                         })
                       }
@@ -453,7 +453,7 @@ export default function StudentsPage() {
                     </TableCell>
                     <TableCell>
                       <p className="max-w-64 truncate text-sm">
-                        {student.studyProgramName ?? "—"}
+                        {student.studyProgramName ?? "-"}
                       </p>
                       <p className="max-w-64 truncate text-xs text-muted-foreground">
                         {student.facultyName ?? student.cityName ?? "Nije uneseno"}
@@ -463,10 +463,10 @@ export default function StudentsPage() {
                       <p>
                         {student.currentStudyYear
                           ? `${student.currentStudyYear}. godina`
-                          : "—"}
+                          : "-"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {statusLabels[student.studyStatus ?? ""] ?? "—"}
+                        {statusLabels[student.studyStatus ?? ""] ?? "-"}
                       </p>
                     </TableCell>
                     <TableCell>

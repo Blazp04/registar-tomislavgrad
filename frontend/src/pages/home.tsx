@@ -70,7 +70,7 @@ export default function HomePage() {
             </h1>
 
             <p className="landing-reveal landing-delay-2 mt-8 max-w-xl text-base leading-7 text-[#52636c] sm:text-lg sm:leading-8">
-              Evidentirajte svoj obrazovni put, održavajte podatke ažurnima i pregledajte stipendije koje je Općina zabilježila — kroz jedan jasan profil.
+              Evidentirajte svoj obrazovni put, održavajte podatke ažurnima i pregledajte stipendije koje je Općina zabilježila - kroz jedan jasan profil.
             </p>
 
             <div className="landing-reveal landing-delay-3 mt-9 flex flex-col items-start gap-5 sm:flex-row sm:items-center">
@@ -145,7 +145,7 @@ export default function HomePage() {
           <div className="bg-[#b72e2a] p-7 text-white sm:p-10 lg:p-14">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-white/65">Što trebate pripremiti</p>
             <h2 className="mt-8 max-w-xl text-4xl font-semibold leading-[1.02] tracking-[-0.05em] sm:text-5xl">
-              Za račun malo. Za profil — ono što već znate.
+              Za račun malo. Za profil - ono što već znate.
             </h2>
             <div className="mt-12 border-t border-white/25 pt-6">
               <p className="text-sm font-semibold">Pri otvaranju računa</p>
@@ -188,7 +188,7 @@ export default function HomePage() {
               </h2>
             </div>
             <div className="border-l-2 border-[#d9b55b] pl-7 sm:pl-9">
-              <p className="text-lg leading-8 text-[#53666f]">Račun mogu otvoriti studenti s prebivalištem na području Općine Tomislavgrad — bez obzira je li njihov studij trenutačan, završen ili prekinut.</p>
+              <p className="text-lg leading-8 text-[#53666f]">Račun mogu otvoriti studenti s prebivalištem na području Općine Tomislavgrad - bez obzira je li njihov studij trenutačan, završen ili prekinut.</p>
               <p className="mt-7 text-sm leading-7 text-[#69777d]">Ažurni podaci pomažu Općini bolje razumjeti gdje i što mladi studiraju te kvalitetnije planirati stipendije i druge oblike podrške.</p>
               <Button asChild variant="outline" className="mt-9 h-12 rounded-none border-[#102d3d] bg-transparent px-5 text-[#102d3d] hover:bg-[#102d3d] hover:text-white">
                 <Link to="/register">Provjerite svoj profil <ArrowRightIcon /></Link>
