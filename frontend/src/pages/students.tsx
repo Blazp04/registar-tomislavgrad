@@ -11,7 +11,7 @@ import {
   SearchIcon,
   SlidersHorizontalIcon,
 } from "lucide-react"
-import { Link } from "react-router"
+import { Link, useSearchParams } from "react-router"
 
 import {
   exportAdminStudents,
@@ -39,13 +39,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { cn } from "@/lib/utils"
+import { PageHeader } from "@/components/page-header"
+import { cn, currentAcademicYear, initials } from "@/lib/utils"
 
 const defaultFilters: StudentFilters = {
   page: "1",
   limit: "20",
   sort: "lastName",
   order: "asc",
+}
+
+const statusVariants: Record<string, "success" | "warning" | "info" | "neutral"> = {
+  active: "success",
+  paused: "warning",
+  completed: "info",
+  withdrawn: "neutral",
 }
 
 const statusLabels: Record<string, string> = {
@@ -74,8 +82,8 @@ const scholarshipStatusOptions = [
 ]
 
 const verificationOptions = [
-  { value: "verified", label: "Potvrđeni" },
-  { value: "unverified", label: "Nepotvrđeni" },
+  { value: "verified", label: `Potvrđeni za ${currentAcademicYear()}` },
+  { value: "unverified", label: `Čekaju potvrdu za ${currentAcademicYear()}` },
 ]
 
 const filterKeys: Array<keyof StudentFilters> = [
@@ -139,9 +147,18 @@ const dateInputValue = (value?: string) => {
 }
 
 export default function StudentsPage() {
-  const [filters, setFilters] = useState<StudentFilters>(defaultFilters)
+  const [searchParams] = useSearchParams()
+  // Deep links from the overview, e.g. /admin/students?verification=unverified
+  const [filters, setFilters] = useState<StudentFilters>(() => ({
+    ...defaultFilters,
+    verification: (searchParams.get("verification") as StudentFilters["verification"]) || undefined,
+    updatedBefore: searchParams.get("updatedBefore") || undefined,
+  }))
   const [search, setSearch] = useState("")
-  const [showMoreFilters, setShowMoreFilters] = useState(false)
+  const [showMoreFilters, setShowMoreFilters] = useState(
+    () => Boolean(searchParams.get("verification") || searchParams.get("updatedBefore")),
+  )
+  const academicYear = currentAcademicYear()
   const { data, isPending } = useAdminStudents(filters)
 
   const set = (patch: Partial<StudentFilters>) =>
@@ -163,22 +180,20 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Studenti</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Brzo pronađite studente i precizirajte rezultate dodatnim filtrima.
-          </p>
-        </div>
-        <Button variant="outline" onClick={() => exportAdminStudents(filters)}>
-          <DownloadIcon />
-          Izvezi CSV
-        </Button>
-      </div>
+      <PageHeader
+        title="Studenti"
+        description="Brzo pronađite studente i precizirajte rezultate dodatnim filtrima."
+        actions={
+          <Button variant="outline" onClick={() => exportAdminStudents(filters)}>
+            <DownloadIcon />
+            Izvezi CSV
+          </Button>
+        }
+      />
 
       <div className="overflow-hidden rounded-xl border bg-card">
         <form
-          className="flex flex-col gap-2 border-b p-3 sm:flex-row"
+          className="flex flex-col gap-2 border-b p-4 sm:flex-row"
           onSubmit={(event) => {
             event.preventDefault()
             set({ search: search.trim() || undefined })
@@ -187,16 +202,16 @@ export default function StudentsPage() {
           <div className="relative flex-1">
             <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              className="pl-9"
+              className="h-10 pl-9"
               placeholder="Pretraži po imenu, prezimenu ili e-mailu..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
-          <Button type="submit">Pretraži</Button>
+          <Button type="submit" className="h-10 px-5">Pretraži</Button>
         </form>
 
-        <div className="space-y-3 p-3">
+        <div className="space-y-3 bg-muted/30 p-4">
           <div
             role="toolbar"
             aria-label="Filtri studenata"
@@ -303,7 +318,7 @@ export default function StudentsPage() {
           {showMoreFilters && (
             <div
               id="additional-student-filters"
-              className="grid gap-4 rounded-lg border bg-muted/30 p-3 lg:grid-cols-[minmax(0,1fr)_15rem_minmax(18rem,0.7fr)]"
+              className="grid gap-4 rounded-xl border bg-card p-4 lg:grid-cols-[minmax(0,1fr)_15rem_minmax(18rem,0.7fr)]"
             >
               <div className="space-y-2">
                 <Label>Dodatni kriteriji</Label>
@@ -424,7 +439,7 @@ export default function StudentsPage() {
             <TableBody>
               {isPending ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-12 text-center">
+                  <TableCell colSpan={6} className="py-14 text-center text-muted-foreground">
                     Učitavanje...
                   </TableCell>
                 </TableRow>
@@ -441,15 +456,18 @@ export default function StudentsPage() {
                 data.items.map((student) => (
                   <TableRow key={student.id}>
                     <TableCell>
-                      <p className="font-medium">
-                        {student.lastName}, {student.firstName}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{student.email}</p>
-                      {!student.isActive && (
-                        <Badge variant="destructive" className="mt-1">
-                          Deaktiviran
-                        </Badge>
-                      )}
+                      <Link to={`/admin/students/${student.id}`} className="group flex items-center gap-3">
+                        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-navy/[0.07] text-xs font-semibold text-navy">
+                          {initials(`${student.firstName} ${student.lastName}`)}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-2 font-medium group-hover:text-primary">
+                            {student.lastName}, {student.firstName}
+                            {!student.isActive && <Badge variant="destructive">Deaktiviran</Badge>}
+                          </span>
+                          <span className="block text-xs text-muted-foreground">{student.email}</span>
+                        </span>
+                      </Link>
                     </TableCell>
                     <TableCell>
                       <p className="max-w-64 truncate text-sm">
@@ -460,37 +478,46 @@ export default function StudentsPage() {
                       </p>
                     </TableCell>
                     <TableCell>
-                      <p>
+                      <p className="text-sm">
                         {student.currentStudyYear
                           ? `${student.currentStudyYear}. godina`
-                          : "-"}
+                          : "—"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {statusLabels[student.studyStatus ?? ""] ?? "-"}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          {student.completionPercentage}%
-                        </span>
-                        <div className="h-1.5 w-16 rounded bg-slate-100">
-                          <div
-                            className="h-1.5 rounded bg-primary"
-                            style={{ width: `${student.completionPercentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {student.verifiedAcademicYear ? (
-                        <Badge variant="secondary">{student.verifiedAcademicYear}</Badge>
+                      {student.studyStatus ? (
+                        <Badge variant={statusVariants[student.studyStatus] ?? "neutral"} className="mt-1">
+                          {statusLabels[student.studyStatus] ?? student.studyStatus}
+                        </Badge>
                       ) : (
-                        <Badge variant="outline">Nije potvrđen</Badge>
+                        <p className="text-xs text-muted-foreground">—</p>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button asChild variant="ghost" size="icon">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={cn(
+                              "h-full rounded-full",
+                              student.completionPercentage === 100 ? "bg-emerald-500" : "bg-primary",
+                            )}
+                            style={{ width: `${student.completionPercentage}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium tabular-nums">
+                          {student.completionPercentage}%
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {student.verifiedAcademicYear === academicYear ? (
+                        <Badge variant="success">{student.verifiedAcademicYear}</Badge>
+                      ) : student.verifiedAcademicYear ? (
+                        <Badge variant="warning" title={`Zadnja potvrda: ${student.verifiedAcademicYear}`}>Čeka {academicYear}</Badge>
+                      ) : (
+                        <Badge variant="warning">Nije potvrđen</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button asChild variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-primary">
                         <Link
                           to={`/admin/students/${student.id}`}
                           aria-label="Otvori profil"
@@ -506,7 +533,7 @@ export default function StudentsPage() {
           </Table>
         </div>
         {data?.meta && (
-          <div className="flex flex-col gap-3 border-t px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t bg-muted/30 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
             <p className="text-muted-foreground">
               Ukupno {data.meta.total} · Stranica {data.meta.page} od{" "}
               {Math.max(1, data.meta.totalPages)}

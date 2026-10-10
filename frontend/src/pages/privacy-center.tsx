@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { DownloadIcon, FilePenLineIcon, Trash2Icon } from "lucide-react";
+import { BellIcon, DownloadIcon, FilePenLineIcon, InboxIcon, PowerIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useLogout } from "@/services/auth";
 import {
@@ -10,6 +10,7 @@ import {
   useRecordConsent,
   type DataRequest,
 } from "@/services/registry";
+import { IconTile, PageHeader, Spinner } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -39,6 +40,13 @@ const requestLabels: Record<DataRequest["type"], string> = {
   deletion: "Brisanje podataka",
 };
 
+const statusVariants: Record<DataRequest["status"], "neutral" | "info" | "success" | "destructive"> = {
+  submitted: "neutral",
+  in_review: "info",
+  completed: "success",
+  rejected: "destructive",
+};
+
 const statusLabels: Record<DataRequest["status"], string> = {
   submitted: "Zaprimljen",
   in_review: "U obradi",
@@ -62,11 +70,7 @@ export default function PrivacyCenterPage() {
   );
 
   if (isPending || !data) {
-    return (
-      <div className="grid min-h-[40vh] place-items-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
+    return <Spinner className="min-h-[40vh]" />;
   }
 
   const optionalAccepted =
@@ -94,67 +98,66 @@ export default function PrivacyCenterPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Privatnost</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Upravljajte obavijestima, preuzmite podatke ili pošaljite zahtjev.
-        </p>
-      </header>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <PageHeader
+        title="Privatnost"
+        description="Upravljajte obavijestima, preuzmite podatke ili pošaljite zahtjev administraciji."
+      />
 
-      <section aria-labelledby="privacy-settings-heading">
-        <div className="mb-3">
-          <h2 id="privacy-settings-heading" className="font-semibold">
-            Postavke
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Odaberite želite li primati neobavezne obavijesti o registru.
-          </p>
+      <section aria-labelledby="privacy-settings-heading" className="rounded-xl border bg-card">
+        <div className="border-b px-5 py-4">
+          <h2 id="privacy-settings-heading" className="font-semibold">Postavke</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">Odaberite želite li primati neobavezne obavijesti o registru.</p>
         </div>
-
-        <label className="flex cursor-pointer items-start justify-between gap-6 rounded-xl border bg-white p-4">
-          <span>
-            <span className="block text-sm font-medium">
-              Neobavezne obavijesti
-            </span>
-            <span className="mt-1 block text-sm leading-5 text-muted-foreground">
-              Ovu privolu možete promijeniti u bilo kojem trenutku.
-            </span>
+        <label className="flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40">
+          <IconTile tone="navy"><BellIcon /></IconTile>
+          <span className="flex-1">
+            <span className="block text-sm font-medium">Neobavezne obavijesti</span>
+            <span className="mt-0.5 block text-sm leading-5 text-muted-foreground">Ovu privolu možete promijeniti u bilo kojem trenutku.</span>
           </span>
           <Checkbox
-            className="mt-0.5"
+            className="size-5"
             checked={optionalAccepted}
             disabled={consent.isPending}
             onCheckedChange={(value) => consent.mutate(value === true)}
           />
         </label>
-        <p className="mt-2 text-xs text-muted-foreground">
+        <p className="rounded-b-2xl border-t bg-muted/40 px-5 py-3 text-xs text-muted-foreground">
           Uvjeti korištenja i politika privatnosti prihvaćeni su pri registraciji.
         </p>
       </section>
 
       <section aria-labelledby="privacy-actions-heading">
         <div className="mb-3">
-          <h2 id="privacy-actions-heading" className="font-semibold">
-            Podaci i zahtjevi
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Preuzmite kopiju svojih podataka ili zatražite postupanje administracije.
-          </p>
+          <h2 id="privacy-actions-heading" className="font-semibold">Podaci i zahtjevi</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">Preuzmite kopiju svojih podataka ili zatražite postupanje administracije.</p>
         </div>
 
-        <div className="flex flex-col gap-3 rounded-xl border bg-white p-4 sm:flex-row sm:items-center">
-          <Button variant="outline" onClick={() => downloadOwnData()}>
-            <DownloadIcon />
-            Preuzmi moje podatke
-          </Button>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => downloadOwnData()}
+            className="group flex items-center gap-4 rounded-xl border bg-card p-4 text-left transition-colors hover:border-foreground/20 hover:bg-muted/40"
+          >
+            <IconTile tone="navy"><DownloadIcon /></IconTile>
+            <span>
+              <span className="block font-medium">Preuzmi moje podatke</span>
+              <span className="block text-xs text-muted-foreground">Kopija profila u strojno čitljivom obliku</span>
+            </span>
+          </button>
 
           <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <FilePenLineIcon />
-                Novi zahtjev
-              </Button>
+              <button
+                type="button"
+                className="group flex items-center gap-4 rounded-xl border bg-card p-4 text-left transition-colors hover:border-foreground/20 hover:bg-muted/40"
+              >
+                <IconTile tone="brand"><FilePenLineIcon /></IconTile>
+                <span>
+                  <span className="block font-medium">Novi zahtjev</span>
+                  <span className="block text-xs text-muted-foreground">Ispravak, izvoz, ograničenje ili brisanje</span>
+                </span>
+              </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
@@ -218,49 +221,52 @@ export default function PrivacyCenterPage() {
         </div>
       </section>
 
-      {data.dataRequests.length > 0 && (
-        <section aria-labelledby="my-requests-heading">
-          <h2 id="my-requests-heading" className="mb-3 font-semibold">
-            Moji zahtjevi
-          </h2>
-          <div className="divide-y rounded-xl border bg-white">
+      <section aria-labelledby="my-requests-heading">
+        <h2 id="my-requests-heading" className="mb-3 font-semibold">
+          Moji zahtjevi
+        </h2>
+        {data.dataRequests.length > 0 ? (
+          <div className="divide-y rounded-xl border bg-card">
             {data.dataRequests.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between gap-4 p-4"
+                className="flex items-center justify-between gap-4 px-5 py-4"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium">{requestLabels[item.type]}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
                     {new Date(item.createdAt).toLocaleDateString("hr-HR")}
                     {item.resolutionNote ? ` · ${item.resolutionNote}` : ""}
                   </p>
                 </div>
-                <Badge variant="secondary">{statusLabels[item.status]}</Badge>
+                <Badge variant={statusVariants[item.status]}>{statusLabels[item.status]}</Badge>
               </div>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <div className="flex items-center gap-3 rounded-xl border border-dashed px-5 py-4 text-sm text-muted-foreground">
+            <InboxIcon className="size-4" /> Još niste poslali nijedan zahtjev.
+          </div>
+        )}
+      </section>
 
-      <section className="border-t pt-5" aria-labelledby="deactivation-heading">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <section className="rounded-xl border p-5" aria-labelledby="deactivation-heading">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 id="deactivation-heading" className="text-sm font-medium">
+            <h2 id="deactivation-heading" className="text-sm font-semibold">
               Deaktivacija računa
             </h2>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            <p className="mt-1 text-sm leading-5 text-muted-foreground">
               Onemogućuje prijavu, ali ne briše podatke iz registra.
             </p>
           </div>
           <Button
-            size="sm"
-            variant="ghost"
-            className="self-start text-destructive hover:bg-destructive/10 hover:text-destructive sm:self-auto"
+            variant="destructive"
+            className="self-start sm:self-auto"
             disabled={deactivate.isPending}
             onClick={deactivateAccount}
           >
-            <Trash2Icon />
+            <PowerIcon />
             Deaktiviraj račun
           </Button>
         </div>

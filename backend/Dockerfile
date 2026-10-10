@@ -5,8 +5,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-COPY tsconfig.json ./
+COPY tsconfig.json tsconfig.scripts.json ./
 COPY src ./src
+COPY scripts ./scripts
 
 RUN npm run build
 

@@ -1,6 +1,7 @@
-import { MenuIcon, XIcon } from "lucide-react";
+import { ArrowUpRightIcon, MenuIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { Link, Outlet } from "react-router";
+import { BrandLogo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 
 const links = [
@@ -13,81 +14,82 @@ export default function PublicLayout() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="min-h-svh bg-[#fbfaf6] text-[#102d3d]">
-      <header className="sticky top-0 z-40 border-b border-[#cdd0ca] bg-[#f1eee6]/94 backdrop-blur-xl">
-        <div className="mx-auto flex h-18 max-w-[90rem] items-center justify-between px-5 sm:px-8 lg:px-12 xl:px-16">
-          <Link to="/" className="flex items-center gap-3" aria-label="Registar studenata i stipendija - početna">
-            <img src="/grb-tomislavgrad.png" alt="Općina Tomislavgrad" className="h-10 w-[146px] object-contain object-left sm:w-[170px]" />
-            <span className="hidden h-8 w-px bg-[#bfc4c0] sm:block" aria-hidden="true" />
-            <span className="hidden text-[0.67rem] font-semibold uppercase leading-[1.35] tracking-[0.13em] text-[#53666f] sm:block">
-              Registar studenata<br />i stipendija
-            </span>
+    <div className="flex min-h-svh flex-col bg-background">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-navy-deep/95 text-white backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
+          <Link to="/" aria-label="Registar studenata i stipendija - početna" className="rounded-md">
+            <BrandLogo title="Registar studenata i stipendija" tone="inverted" />
           </Link>
 
-          <nav className="hidden items-center gap-7 md:flex" aria-label="Glavna navigacija">
+          <nav className="hidden items-center gap-8 lg:flex" aria-label="Glavna navigacija">
             {links.map((link) => (
-              <a key={link.to} href={link.to} className="border-b border-transparent py-1 text-sm font-medium text-[#53666f] transition-colors hover:border-[#b72e2a] hover:text-[#102d3d]">
+              <a key={link.to} href={link.to} className="text-sm text-white/65 transition-colors hover:text-white">
                 {link.label}
               </a>
             ))}
           </nav>
 
-          <div className="hidden items-center gap-1 md:flex">
-            <Button asChild variant="ghost" className="rounded-none px-4 text-[#102d3d] hover:bg-[#e4e0d6]"><Link to="/login">Prijava</Link></Button>
-            <Button asChild className="rounded-none bg-[#b72e2a] px-5 text-white shadow-none hover:bg-[#982320]"><Link to="/register">Otvorite račun</Link></Button>
+          <div className="hidden items-center gap-5 md:flex">
+            <Link to="/login" className="text-sm font-medium text-white/80 transition-colors hover:text-white">Prijava</Link>
+            <Button asChild><Link to="/register">Otvorite račun</Link></Button>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-none text-[#102d3d] md:hidden"
+          <button
+            type="button"
+            className="grid size-9 place-items-center rounded-md border border-white/15 text-white md:hidden"
             onClick={() => setOpen((value) => !value)}
             aria-label={open ? "Zatvori izbornik" : "Otvori izbornik"}
             aria-expanded={open}
           >
-            {open ? <XIcon /> : <MenuIcon />}
-          </Button>
+            {open ? <XIcon className="size-4" /> : <MenuIcon className="size-4" />}
+          </button>
         </div>
 
         {open && (
-          <div className="border-t border-[#cdd0ca] bg-[#f1eee6] px-5 py-5 md:hidden">
-            <nav className="flex flex-col" aria-label="Mobilna navigacija">
-              {links.map((link) => (
-                <a key={link.to} href={link.to} onClick={() => setOpen(false)} className="border-b border-[#cdd0ca] py-3.5 text-sm font-medium">
-                  {link.label}
-                </a>
-              ))}
-              <div className="mt-5 grid grid-cols-2 gap-2">
-                <Button asChild variant="outline" className="rounded-none border-[#102d3d] bg-transparent"><Link to="/login" onClick={() => setOpen(false)}>Prijava</Link></Button>
-                <Button asChild className="rounded-none bg-[#b72e2a] hover:bg-[#982320]"><Link to="/register" onClick={() => setOpen(false)}>Otvorite račun</Link></Button>
-              </div>
-            </nav>
-          </div>
+          <nav className="border-t border-white/10 px-5 pb-6 pt-2 md:hidden" aria-label="Mobilna navigacija">
+            {links.map((link) => (
+              <a key={link.to} href={link.to} onClick={() => setOpen(false)} className="block border-b border-white/10 py-3.5 text-sm text-white/80">
+                {link.label}
+              </a>
+            ))}
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <Button asChild variant="outline" size="lg" className="border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"><Link to="/login" onClick={() => setOpen(false)}>Prijava</Link></Button>
+              <Button asChild size="lg"><Link to="/register" onClick={() => setOpen(false)}>Otvorite račun</Link></Button>
+            </div>
+          </nav>
         )}
       </header>
 
-      <main><Outlet /></main>
+      <main className="flex-1"><Outlet /></main>
 
-      <footer className="bg-[#102d3d] text-white">
-        <div className="mx-auto grid max-w-[90rem] gap-10 px-5 py-14 sm:grid-cols-2 sm:px-8 lg:grid-cols-[1.45fr_.75fr_.8fr] lg:px-12 xl:px-16">
+      <footer className="bg-navy-deep text-white">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 pt-16 pb-12 sm:grid-cols-2 sm:px-8 lg:grid-cols-[1.5fr_1fr_1fr]">
           <div>
-            <img src="/grb-tomislavgrad.png" alt="Općina Tomislavgrad" className="h-14 w-[240px] bg-white object-contain object-left px-3" />
-            <p className="mt-6 max-w-md text-sm leading-7 text-white/58">Službena digitalna evidencija obrazovnog puta studenata s područja Općine Tomislavgrad.</p>
+            <BrandLogo title="Registar studenata i stipendija" tone="inverted" />
+            <p className="mt-6 max-w-sm text-sm leading-6 text-white/55">Službena digitalna evidencija obrazovnog puta studenata s područja Općine Tomislavgrad.</p>
           </div>
           <div>
-            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#d9b55b]">Informacije</p>
-            <div className="mt-5 flex flex-col gap-3 text-sm text-white/72">
-              <Link to="/privacy" className="hover:text-white">Politika privatnosti</Link>
-              <Link to="/terms" className="hover:text-white">Uvjeti korištenja</Link>
-              <Link to="/contact" className="hover:text-white">Kontakt</Link>
-            </div>
+            <p className="label-mono text-white/40">Informacije</p>
+            <ul className="mt-5 space-y-3 text-sm text-white/75">
+              <li><Link to="/privacy" className="hover:text-white">Politika privatnosti</Link></li>
+              <li><Link to="/terms" className="hover:text-white">Uvjeti korištenja</Link></li>
+              <li><Link to="/contact" className="hover:text-white">Kontakt</Link></li>
+            </ul>
           </div>
           <div>
-            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#d9b55b]">Općina Tomislavgrad</p>
-            <p className="mt-5 text-sm leading-7 text-white/72">Ulica Mijata Tomića 120<br />80240 Tomislavgrad<br />Bosna i Hercegovina</p>
+            <p className="label-mono text-white/40">Općina Tomislavgrad</p>
+            <address className="mt-5 space-y-3 text-sm not-italic leading-6 text-white/75">
+              <p>Ulica Mijata Tomića 120<br />80240 Tomislavgrad</p>
+              <p><a href="tel:+38734356400" className="hover:text-white">+387 34 356-400</a><br /><a href="mailto:opcina.tg@tel.net.ba" className="inline-flex items-center gap-1 hover:text-white">opcina.tg@tel.net.ba <ArrowUpRightIcon className="size-3.5" /></a></p>
+            </address>
           </div>
         </div>
-        <div className="border-t border-white/10 px-5 py-5 text-center text-xs text-white/38">© {new Date().getFullYear()} Općina Tomislavgrad. Sva prava pridržana.</div>
+        <div className="mx-auto max-w-7xl px-5 sm:px-8">
+          <div className="flex flex-col gap-2 border-t border-white/10 py-6 text-xs text-white/40 sm:flex-row sm:items-center sm:justify-between">
+            <span>© {new Date().getFullYear()} Općina Tomislavgrad</span>
+            <span className="font-mono">43°43′ N · 17°14′ E</span>
+          </div>
+        </div>
       </footer>
     </div>
   );

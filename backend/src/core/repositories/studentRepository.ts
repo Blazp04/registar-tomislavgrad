@@ -17,6 +17,7 @@ import type { EducationDTO, ScholarshipDTO, StudentQueryDTO, UpdateProfileDTO } 
 import { user } from "../database/auth-schema.js";
 import { codebook } from "../database/codebook-schema.js";
 import { db } from "../database/db.js";
+import { getCurrentAcademicYear } from "../utils/profileCompletion.js";
 import {
   auditLog,
   consent,
@@ -288,8 +289,9 @@ export const studentRepository = {
     if (filters.scholarshipStatus) conditions.push(sql`exists(select 1 from scholarships s where s.profile_id = ${studentProfile.id} and s.status = ${filters.scholarshipStatus})`);
     if (filters.updatedBefore) conditions.push(lt(studentProfile.updatedAt, new Date(filters.updatedBefore)));
     if (filters.updatedAfter) conditions.push(sql`${studentProfile.updatedAt} >= ${new Date(filters.updatedAfter)}`);
-    if (filters.verification === "verified") conditions.push(sql`${studentProfile.verifiedAcademicYear} is not null`);
-    if (filters.verification === "unverified") conditions.push(isNull(studentProfile.verifiedAcademicYear));
+    // Matches getStats(): "verified" means confirmed for the current academic year
+    if (filters.verification === "verified") conditions.push(eq(studentProfile.verifiedAcademicYear, getCurrentAcademicYear()));
+    if (filters.verification === "unverified") conditions.push(sql`${studentProfile.verifiedAcademicYear} is distinct from ${getCurrentAcademicYear()}`);
 
     const sortMap = {
       lastName: user.lastName,
